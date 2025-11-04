@@ -7,6 +7,10 @@ import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import attendanceRoutes from "./routes/attendance.js"; // ✅ NEW
+import announcementRoutes from "./routes/announcements.js"; // ✅ NEW
+import analyticsRoutes from "./routes/analytics.js";
+import revenueRoutes from "./routes/Revenue.js"; //
+import performanceRoutes from "./routes/performance.js";
 
 dotenv.config();
 
@@ -30,14 +34,24 @@ app.get("/hello", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/attendance", attendanceRoutes); // ✅ ATTENDANCE ROUTE ADDED
+app.use("/api/announcements", announcementRoutes);
+app.use("/api", revenueRoutes);
+
+
 
 // ✅ Global Error Handler
 app.use((err, req, res, next) => {
   console.error("❌ Error:", err.stack);
   res.status(500).json({ message: "Server Error", error: err.message });
 });
+app.use("/api", analyticsRoutes);
+app.use("/api/performance", performanceRoutes);
+
+
 
 // ✅ Start Server
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
+
+
 });

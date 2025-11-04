@@ -1,19 +1,41 @@
 import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
-import OverviewCards from "../components/OverviewCards";
+import AnalyticsCards from "../components/AnalyticsCards";
 import RevenueChart from "../components/RevenueChart";
+import TeamPerformanceChart from "../components/TeamPerformanceChart";
 import AnnouncementList from "../components/AnnouncementList";
-import AttendanceSummary from "../components/AttendanceSummary";
-import AdminAttendanceTable from "../components/AdminAttendanceTable";
+import AddAnnouncement from "../components/AddAnnouncement";
+import api from "../api/axios";
+import ManageUsers from "../components/ManageUsers";
+
 
 const AdminDashboard = () => {
-  const stats = useState({ employees: 8, interns: 12, revenue: 35000 });
   const [user, setUser] = useState(null);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    employees: 0,
+    interns: 0,
+    activeToday: 0,
+    revenue: 0,
+  });
 
   useEffect(() => {
+    // ✅ Get logged-in user from localStorage
     const userData = JSON.parse(localStorage.getItem("user"));
     setUser(userData);
+
+    // ✅ Fetch analytics data
+    const fetchStats = async () => {
+      try {
+        const res = await api.get("/analytics/overview");
+        setStats(res.data);
+      } catch (err) {
+        console.error("Error fetching dashboard stats:", err);
+      }
+    };
+
+    fetchStats();
   }, []);
 
   const handleLogout = () => {
@@ -24,13 +46,25 @@ const AdminDashboard = () => {
   return (
     <div className="flex">
       <Sidebar onLogout={handleLogout} />
-      <div className="flex-1 ml-64 p-8 bg-gray-100 min-h-screen">
+      <div className="flex-1 ml-64 p-6 bg-gray-100 min-h-screen">
         <Navbar user={user} />
-        <OverviewCards stats={stats} />
+
+        {/* ✅ Overview / Analytics Cards */}
+        <AnalyticsCards data={stats} />
+
+        {/* ✅ Revenue Chart */}
         <RevenueChart />
-         <AdminAttendanceTable />
-        <AttendanceSummary />
-        <AnnouncementList />
+
+        {/* ✅ Team Performance Chart */}
+        <TeamPerformanceChart />
+
+        {/* ✅ Announcements Section */}
+        <div className="mt-8">
+          <AddAnnouncement />
+          <AnnouncementList />
+          <ManageUsers />
+
+        </div>
       </div>
     </div>
   );

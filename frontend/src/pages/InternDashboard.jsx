@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import AttendancePanel from "../components/AttendancePanel";
+import Announcements from "../components/Announcements";
+
 import {
   LineChart,
   Line,
@@ -62,6 +64,7 @@ const InternDashboard = () => {
               />
             </LineChart>
           </ResponsiveContainer>
+          <Announcements />
         </div>
       </div>
     </div>

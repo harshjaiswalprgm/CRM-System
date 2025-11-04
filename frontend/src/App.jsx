@@ -6,6 +6,13 @@ import EmployeeDashboard from "./pages/EmployeeDashboard";
 import InternDashboard from "./pages/InternDashboard";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import UserProfile from "./components/UserProfile";
+import AdminProfile from "./pages/AdminProfile";
+import EditUserPage from "./pages/EditUserPage";
+import AddUserPage from "./pages/AddUserPage";
+import ManageUsers from "./pages/ManageUsers";
+
+
 
 // ✅ Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -33,13 +40,7 @@ const App = () => {
         {/* ✅ If already logged in, redirect to their dashboard */}
         <Route
           path="/"
-          element={
-            user ? (
-              <Navigate to={`/${user.role}`} replace />
-            ) : (
-              <Login />
-            )
-          }
+          element={user ? <Navigate to={`/${user.role}`} replace /> : <Login />}
         />
 
         {/* ✅ Protected Routes */}
@@ -70,6 +71,15 @@ const App = () => {
 
         {/* Fallback Route */}
         <Route path="*" element={<Navigate to="/" replace />} />
+
+        <Route path="/admin/user/:id" element={<UserProfile />} />
+        <Route path="/admin/profile" element={<AdminProfile />} />
+        <Route path="/admin/edit-user/:id" element={<EditUserPage />} />
+        <Route path="/admin/add-user" element={<AddUserPage />} />
+        <Route path="/admin/manage-users" element={<ManageUsers />} />
+        <Route path="/admin/user/:id" element={<UserProfile />} />
+
+
       </Routes>
     </BrowserRouter>
   );

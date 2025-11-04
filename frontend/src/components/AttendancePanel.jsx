@@ -42,7 +42,9 @@ const AttendancePanel = () => {
         [type]: new Date().toLocaleTimeString(),
       }));
 
-      toast.success(`✅ ${type.replace(/([A-Z])/g, " $1")} marked successfully!`);
+      toast.success(
+        `✅ ${type.replace(/([A-Z])/g, " $1")} marked successfully!`
+      );
     } catch (err) {
       console.error("❌ Error marking attendance:", err);
       const msg =

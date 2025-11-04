@@ -3,6 +3,8 @@ import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import AttendancePanel from "../components/AttendancePanel";
 import AttendanceSummary from "../components/AttendanceSummary";
+import Announcements from "../components/Announcements";
+
 import {
   BarChart,
   Bar,
@@ -58,6 +60,7 @@ const EmployeeDashboard = () => {
             </BarChart>
           </ResponsiveContainer>
           <AttendanceSummary />
+          <Announcements />
         </div>
 
         {/* Intern List */}
