@@ -1,41 +1,66 @@
+// backend/routes/auth.js
 import express from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
 const router = express.Router();
 
-// ✅ POST /api/auth/login
+/* =====================================================
+   ✅ LOGIN
+   POST /api/auth/login
+===================================================== */
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-
   try {
-    // Validate input
+    let { email, password } = req.body;
+
+    // 🔐 Basic validation
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Please provide both email and password" });
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
     }
 
-    // Check if user exists
-    const user = await User.findOne({ email: email.toLowerCase() });
+    email = email.toLowerCase().trim();
+
+    // 🔍 Find user
+    const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
     }
 
-    // Verify password
+    // 🚫 Optional: block inactive users (future-proof)
+    if (user.isActive === false) {
+      return res.status(403).json({
+        success: false,
+        message: "Account is disabled. Contact admin.",
+      });
+    }
+
+    // 🔑 Compare password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
     }
 
-    // ✅ Generate JWT token
+    // 🔐 Generate JWT
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      {
+        id: user._id,
+        role: user.role,
+        email: user.email,
+      },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
     );
 
-    // ✅ Send full user object with _id (not id)
+    // ✅ Success response
     res.status(200).json({
       success: true,
       message: "Login successful",
@@ -46,11 +71,15 @@ router.post("/login", async (req, res) => {
         email: user.email,
         role: user.role,
         avatar: user.avatar || null,
+        teamName: user.teamName || null,
       },
     });
-  } catch (err) {
-    console.error("❌ Login Error:", err.message);
-    res.status(500).json({ message: "Server error. Please try again later." });
+  } catch (error) {
+    console.error("❌ Login Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error. Please try again later.",
+    });
   }
 });
 

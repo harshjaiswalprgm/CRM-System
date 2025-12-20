@@ -6,8 +6,8 @@ import Announcements from "../components/Announcements";
 import api from "../api/axios";
 
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
@@ -29,13 +29,16 @@ const InternDashboard = () => {
     }
   }, []);
 
-  // ✅ Fetch revenue performance from backend
+  /* ---------------- FETCH DAILY REVENUE ---------------- */
   const fetchPerformance = async (userId) => {
     try {
       const res = await api.get(`/users/${userId}/performance`);
       setPerformance(res.data);
 
-      const sum = res.data.reduce((acc, item) => acc + item.amount, 0);
+      const sum = res.data.reduce(
+        (acc, item) => acc + Number(item.amount || 0),
+        0
+      );
       setTotalRevenue(sum);
     } catch (err) {
       console.error("Error fetching performance:", err);
@@ -54,44 +57,47 @@ const InternDashboard = () => {
       <div className="flex-1 ml-64 p-8 bg-gray-100 min-h-screen">
         <Navbar user={user} />
 
-        {/* Attendance */}
-        <h2 className="text-2xl font-bold text-gray-700 mb-4">Attendance</h2>
+        {/* ================= ATTENDANCE ================= */}
+        <h2 className="text-2xl font-bold text-gray-700 mb-4">
+          Attendance
+        </h2>
         <AttendancePanel />
 
-        {/* Performance Section */}
+        {/* ================= PERFORMANCE ================= */}
         <div className="mt-10">
           <h2 className="text-2xl font-bold text-gray-700 mb-4">
-            Performance Overview
+            Revenue Performance (Daily)
           </h2>
 
-          {/* Total Revenue */}
-          <div className="bg-blue-600 text-white p-4 rounded-xl mb-4 shadow">
+          {/* TOTAL REVENUE */}
+          <div className="bg-orange-500 text-white p-4 rounded-xl mb-4 shadow">
             <h3 className="text-lg font-semibold">
-              Total Revenue Generated:
+              Total Revenue Generated
             </h3>
             <p className="text-3xl font-bold">₹ {totalRevenue}</p>
           </div>
 
-          {/* Performance Chart */}
+          {/* BAR CHART */}
           <div className="bg-white rounded-xl shadow-md p-6">
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={performance}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                <YAxis />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="amount"
-                  stroke="#fb923c"
-                  strokeWidth={3}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {performance.length === 0 ? (
+              <p className="text-gray-500 text-center">
+                No revenue data available
+              </p>
+            ) : (
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart data={performance}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="amount" fill="#fb923c" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
-        {/* Announcements */}
+        {/* ================= ANNOUNCEMENTS ================= */}
         <div className="mt-10">
           <h2 className="text-2xl font-bold text-gray-700 mb-4">
             Announcements

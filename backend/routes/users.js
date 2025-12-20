@@ -1,17 +1,15 @@
-// backend/routes/users.js
 import express from "express";
 import mongoose from "mongoose";
 import User from "../models/User.js";
-import Attendance from "../models/Attendance.js";
 import Revenue from "../models/Revenue.js";
 import { protect } from "../middleware/auth.js";
 import { authorizeRoles } from "../middleware/role.js";
 
 const router = express.Router();
 
-/* -----------------------------
-   📌 GET ALL USERS (Admin only)
------------------------------- */
+/* ===============================
+   GET ALL USERS (ADMIN ONLY)
+================================ */
 router.get("/", protect, authorizeRoles("admin"), async (req, res) => {
   try {
     const users = await User.find()
@@ -20,14 +18,14 @@ router.get("/", protect, authorizeRoles("admin"), async (req, res) => {
 
     res.json(users);
   } catch (err) {
-    console.error("Error fetching users:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
+    console.error("Fetch users error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-/* ------------------------------------
-   📌 CREATE NEW USER (Admin only)
-------------------------------------- */
+/* ===============================
+   CREATE USER (ADMIN ONLY)
+================================ */
 router.post("/", protect, authorizeRoles("admin"), async (req, res) => {
   try {
     const {
@@ -43,29 +41,37 @@ router.post("/", protect, authorizeRoles("admin"), async (req, res) => {
       birthday,
     } = req.body;
 
-    if (!name || !email || !role)
-      return res.status(400).json({ message: "Missing required fields" });
+    if (!name || !email || !role) {
+      return res.status(400).json({ message: "Required fields missing" });
+    }
 
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ message: "User already exists" });
+    if (["intern", "employee"].includes(role) && !manager) {
+      return res
+        .status(400)
+        .json({ message: "Intern/Employee must have a manager" });
+    }
+
+    const exists = await User.findOne({ email: email.toLowerCase() });
+    if (exists) {
+      return res.status(400).json({ message: "User already exists" });
+    }
 
     const newUser = new User({
       name,
       email: email.toLowerCase(),
       phone,
       role,
-      manager: role === "intern" ? manager : null,
-      position,
+      manager: ["intern", "employee"].includes(role) ? manager : null,
+      position: role === "employee" ? position : "",
       teamName,
       joiningDate: joiningDate ? new Date(joiningDate) : new Date(),
-      birthday: birthday || null,
+      birthday: birthday ? new Date(birthday) : null,
       password: password || "Glow@123",
     });
 
     await newUser.save();
 
-    // ⭐ If intern has manager → add into manager.managedInterns
-    if (role === "intern" && manager) {
+    if (["intern", "employee"].includes(role)) {
       await User.findByIdAndUpdate(manager, {
         $addToSet: { managedInterns: newUser._id },
       });
@@ -74,206 +80,204 @@ router.post("/", protect, authorizeRoles("admin"), async (req, res) => {
     const safe = newUser.toObject();
     delete safe.password;
 
-    res.json({ success: true, user: safe });
+    res.status(201).json({ success: true, user: safe });
   } catch (err) {
-    console.error("Error creating user:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
+    console.error("Create user error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-/* ----------------------------------------------------
-   📌 ASSIGN INTERN TO MANAGER (Admin or Manager)
------------------------------------------------------ */
-router.post("/assign", protect, authorizeRoles("admin", "manager"), async (req, res) => {
-  try {
-    const { internId, managerId } = req.body;
+/* ===============================
+   ASSIGN / CHANGE MANAGER
+================================ */
+router.post(
+  "/assign",
+  protect,
+  authorizeRoles("admin", "manager"),
+  async (req, res) => {
+    try {
+      const { internId, managerId } = req.body;
 
-    const intern = await User.findById(internId);
-    const manager = await User.findById(managerId);
+      const user = await User.findById(internId);
+      const manager = await User.findById(managerId);
 
-    if (!intern || !manager)
-      return res.status(404).json({ message: "User not found" });
+      if (!user || !manager) {
+        return res.status(404).json({ message: "User not found" });
+      }
 
-    if (manager.role !== "manager")
-      return res.status(400).json({ message: "Selected user is not a manager" });
+      if (manager.role !== "manager") {
+        return res.status(400).json({ message: "Invalid manager" });
+      }
 
-    // Remove intern from old manager
-    if (intern.manager) {
-      await User.findByIdAndUpdate(intern.manager, {
-        $pull: { managedInterns: internId },
+      if (!["intern", "employee"].includes(user.role)) {
+        return res
+          .status(400)
+          .json({ message: "Only intern/employee can be assigned" });
+      }
+
+      if (user.manager) {
+        await User.findByIdAndUpdate(user.manager, {
+          $pull: { managedInterns: user._id },
+        });
+      }
+
+      user.manager = managerId;
+      await user.save();
+
+      await User.findByIdAndUpdate(managerId, {
+        $addToSet: { managedInterns: user._id },
       });
+
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Assign error:", err);
+      res.status(500).json({ message: "Server error" });
     }
-
-    // Assign new manager
-    intern.manager = managerId;
-    await intern.save();
-
-    await User.findByIdAndUpdate(managerId, {
-      $addToSet: { managedInterns: internId },
-    });
-
-    res.json({ success: true, message: "Intern assigned successfully" });
-  } catch (err) {
-    console.error("Error assigning intern:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
   }
-});
+);
 
-/* ------------------------------------------------
-   📌 GET MANAGER → ASSIGNED INTERNS
-------------------------------------------------- */
-router.get("/manager/interns", protect, authorizeRoles("manager"), async (req, res) => {
-  try {
-    const interns = await User.find({ manager: req.user._id })
-      .select("name email phone role teamName joiningDate");
-
-    res.json(interns);
-  } catch (err) {
-    console.error("Error fetching interns:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
+/* ===============================
+   MANAGER → GET OWN INTERNS
+================================ */
+router.get(
+  "/manager/interns",
+  protect,
+  authorizeRoles("manager"),
+  async (req, res) => {
+    try {
+      const users = await User.find({ manager: req.user._id }).select(
+        "name email role teamName joiningDate"
+      );
+      res.json(users);
+    } catch (err) {
+      res.status(500).json({ message: "Server error" });
+    }
   }
-});
+);
 
-/* ---------------------------------------
-   📌 GET USER PROFILE (Admin or Self)
----------------------------------------- */
+/* ===============================
+   GET USER PROFILE
+================================ */
 router.get("/:id", protect, async (req, res) => {
   try {
-    if (req.user.role !== "admin" && req.user._id.toString() !== req.params.id)
+    if (
+      req.user.role !== "admin" &&
+      req.user._id.toString() !== req.params.id
+    ) {
       return res.status(403).json({ message: "Unauthorized" });
+    }
 
     const user = await User.findById(req.params.id)
       .select("-password")
       .populate("manager", "name email role");
 
+    if (!user) return res.status(404).json({ message: "User not found" });
+
     res.json(user);
   } catch (err) {
-    console.error("Error fetching user:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-/* ---------------------------------------
-   📌 UPDATE USER (Admin or Self)
----------------------------------------- */
+/* ===============================
+   UPDATE USER
+================================ */
 router.put("/:id", protect, async (req, res) => {
   try {
-    const { id } = req.params;
-
-    if (req.user.role !== "admin" && req.user._id.toString() !== id)
+    if (
+      req.user.role !== "admin" &&
+      req.user._id.toString() !== req.params.id
+    ) {
       return res.status(403).json({ message: "Unauthorized" });
-
-    const allowedFields = [
-      "name",
-      "phone",
-      "avatar",
-      "teamName",
-      "position",
-      "joiningDate",
-      "birthday",
-      "password",
-      "role",
-      "manager",
-    ];
-
-    const updates = {};
-    allowedFields.forEach((key) => {
-      if (req.body[key] !== undefined) updates[key] = req.body[key];
-    });
-
-    /* ⭐ MANAGER CHANGE HANDLING */
-    if (updates.manager) {
-      const newMgr = await User.findById(updates.manager);
-      if (!newMgr || newMgr.role !== "manager")
-        return res.status(400).json({ message: "Invalid manager ID" });
-
-      // Remove intern from old manager
-      const oldUser = await User.findById(id);
-      if (oldUser.manager) {
-        await User.findByIdAndUpdate(oldUser.manager, {
-          $pull: { managedInterns: id },
-        });
-      }
-
-      // Add to new manager
-      await User.findByIdAndUpdate(updates.manager, {
-        $addToSet: { managedInterns: id },
-      });
     }
 
-    const updated = await User.findByIdAndUpdate(id, updates, { new: true })
+    const updates = { ...req.body };
+
+    if (
+      ["intern", "employee"].includes(updates.role) &&
+      !updates.manager
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Manager required for intern/employee" });
+    }
+
+    const updated = await User.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+    })
       .select("-password")
       .populate("manager", "name email role");
 
     res.json({ success: true, user: updated });
   } catch (err) {
-    console.error("Error updating user:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
+    console.error("Update error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-/* -----------------------------
-   📌 DELETE USER (Admin only)
------------------------------- */
-router.delete("/:id", protect, authorizeRoles("admin"), async (req, res) => {
-  try {
-    const user = await User.findByIdAndDelete(req.params.id);
+/* ===============================
+   DELETE USER
+================================ */
+router.delete(
+  "/:id",
+  protect,
+  authorizeRoles("admin"),
+  async (req, res) => {
+    try {
+      const user = await User.findByIdAndDelete(req.params.id);
+      if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+      if (user.manager) {
+        await User.findByIdAndUpdate(user.manager, {
+          $pull: { managedInterns: user._id },
+        });
+      }
 
-    // Remove intern from manager list if needed
-    if (user.manager) {
-      await User.findByIdAndUpdate(user.manager, {
-        $pull: { managedInterns: user._id },
-      });
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ message: "Server error" });
     }
-
-    res.json({ success: true, message: "User deleted" });
-  } catch (err) {
-    console.error("Delete error:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
   }
-});
+);
 
-/* -------------------------------------------
-   📌 GET USER PERFORMANCE (Admin / Manager)
--------------------------------------------- */
+/* ===============================
+   PERFORMANCE (DAY-WISE)
+================================ */
 router.get("/:id/performance", protect, async (req, res) => {
   try {
-    const userId = req.params.id;
-
-    const user = await User.findById(userId);
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     if (
       req.user.role !== "admin" &&
-      req.user._id.toString() !== userId &&
-      !(req.user.role === "manager" && user.manager?.toString() === req.user._id.toString())
+      req.user._id.toString() !== req.params.id &&
+      !(req.user.role === "manager" &&
+        user.manager?.toString() === req.user._id.toString())
     ) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    const pipeline = [
-      { $match: { user: new mongoose.Types.ObjectId(userId) } },
+    const data = await Revenue.aggregate([
+      { $match: { user: new mongoose.Types.ObjectId(req.params.id) } },
       {
         $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
-          total: { $sum: "$amount" },
+          _id: {
+            $dateToString: { format: "%Y-%m-%d", date: "$date" },
+          },
+          amount: { $sum: "$amount" },
         },
       },
       { $sort: { _id: 1 } },
-    ];
-
-    const perf = await Revenue.aggregate(pipeline);
+    ]);
 
     res.json(
-      perf.map((p) => ({
-        date: p._id,
-        amount: p.total,
+      data.map((d) => ({
+        date: d._id,
+        amount: d.amount,
       }))
     );
   } catch (err) {
-    console.error("Performance error:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ message: "Server error" });
   }
 });
 

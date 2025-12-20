@@ -1,13 +1,14 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
+import ManagerDashboard from "./pages/ManagerDashboard";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import InternDashboard from "./pages/InternDashboard";
-import ManagerDashboard from "./pages/ManagerDashboard";
 import ManagerStipend from "./pages/ManagerStipend";
 
-import UserProfile from "./components/UserProfile";
+import UserProfile from "./pages/UserProfile";
 import AdminProfile from "./pages/AdminProfile";
 import EditUserPage from "./pages/EditUserPage";
 import AddUserPage from "./pages/AddUserPage";
@@ -16,15 +17,19 @@ import ManageUsers from "./pages/ManageUsers";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-/* ✅ PROTECTED ROUTE */
+/* =========================
+   ✅ PROTECTED ROUTE
+========================= */
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user"));
 
+  // Not logged in
   if (!token || !user) {
     return <Navigate to="/" replace />;
   }
 
+  // Role not allowed
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
   }
@@ -32,28 +37,42 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children;
 };
 
+/* =========================
+   ✅ APP ROUTER
+========================= */
 const App = () => {
   const user = JSON.parse(localStorage.getItem("user"));
 
   const getRedirectPath = () => {
     if (!user) return "/";
-    if (user.role === "admin") return "/admin";
-    if (user.role === "manager") return "/manager";
-    if (user.role === "employee") return "/employee";
-    return "/intern";
+    switch (user.role) {
+      case "admin":
+        return "/admin";
+      case "manager":
+        return "/manager";
+      case "employee":
+        return "/employee";
+      case "intern":
+        return "/intern";
+      default:
+        return "/";
+    }
   };
 
   return (
     <BrowserRouter>
       <ToastContainer position="top-center" />
+
       <Routes>
-        {/* ✅ LOGIN */}
+        {/* ================= LOGIN ================= */}
         <Route
           path="/"
-          element={user ? <Navigate to={getRedirectPath()} replace /> : <Login />}
+          element={
+            user ? <Navigate to={getRedirectPath()} replace /> : <Login />
+          }
         />
 
-        {/* ✅ ADMIN ROUTES */}
+        {/* ================= ADMIN ================= */}
         <Route
           path="/admin"
           element={
@@ -97,13 +116,13 @@ const App = () => {
         <Route
           path="/admin/user/:id"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin", "manager"]}>
               <UserProfile />
             </ProtectedRoute>
           }
         />
 
-        {/* ✅ MANAGER ROUTES */}
+        {/* ================= MANAGER ================= */}
         <Route
           path="/manager"
           element={
@@ -121,7 +140,7 @@ const App = () => {
           }
         />
 
-        {/* ✅ EMPLOYEE */}
+        {/* ================= EMPLOYEE ================= */}
         <Route
           path="/employee"
           element={
@@ -131,7 +150,7 @@ const App = () => {
           }
         />
 
-        {/* ✅ INTERN */}
+        {/* ================= INTERN ================= */}
         <Route
           path="/intern"
           element={
@@ -141,9 +160,8 @@ const App = () => {
           }
         />
 
-        {/* ✅ FALLBACK */}
+        {/* ================= FALLBACK ================= */}
         <Route path="*" element={<Navigate to="/" replace />} />
-
       </Routes>
     </BrowserRouter>
   );

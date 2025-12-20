@@ -1,23 +1,79 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import api from "../api/axios";
 
 const AnnouncementList = () => {
-  const announcements = [
-    { id: 1, title: "Team Meeting Tomorrow", date: "2025-10-28" },
-    { id: 2, title: "New Intern Batch Joining Next Week", date: "2025-11-01" },
-    { id: 3, title: "Diwali Celebration Event 🎉", date: "2025-11-05" },
-  ];
+  const [announcements, setAnnouncements] = useState([]);
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  /* ===============================
+     FETCH ANNOUNCEMENTS
+  =============================== */
+  const fetchAnnouncements = async () => {
+    try {
+      const res = await api.get("/announcements");
+      setAnnouncements(res.data);
+    } catch (error) {
+      console.error("Error fetching announcements:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAnnouncements();
+  }, []);
+
+  /* ===============================
+     DELETE ANNOUNCEMENT (ADMIN)
+  =============================== */
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this announcement?"))
+      return;
+
+    try {
+      await api.delete(`/announcements/${id}`);
+      fetchAnnouncements(); // refresh list
+    } catch (error) {
+  console.error("Delete announcement failed:", error);
+  alert("Failed to delete announcement");
+}
+
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-md p-5 mt-6">
-      <h3 className="text-gray-700 font-semibold mb-4">Recent Announcements</h3>
-      <ul className="space-y-3 max-h-48 overflow-y-auto">
-        {announcements.map((a) => (
-          <li key={a.id} className="flex justify-between border-b pb-2 text-gray-600">
-            <span>{a.title}</span>
-            <span className="text-sm text-gray-400">{a.date}</span>
-          </li>
-        ))}
-      </ul>
+      <h3 className="text-gray-700 font-semibold mb-4">
+        Recent Announcements
+      </h3>
+
+      {announcements.length === 0 ? (
+        <p className="text-gray-500 text-sm">No announcements yet.</p>
+      ) : (
+        <ul className="space-y-4 max-h-64 overflow-y-auto">
+          {announcements.map((a) => (
+            <li
+              key={a._id}
+              className="border-b pb-3 flex justify-between items-start"
+            >
+              <div>
+                <p className="font-medium text-gray-800">{a.title}</p>
+                <p className="text-sm text-gray-600">{a.message}</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {new Date(a.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+
+              {/* 🔴 DELETE BUTTON → ADMIN ONLY */}
+              {user?.role === "admin" && (
+                <button
+                  onClick={() => handleDelete(a._id)}
+                  className="text-red-600 hover:text-red-800 text-sm font-medium"
+                >
+                  Delete
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };

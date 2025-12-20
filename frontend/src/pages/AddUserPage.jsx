@@ -22,7 +22,9 @@ const AddUserPage = () => {
     avatar: "",
   });
 
-  /** 🔹 Fetch Managers List */
+  /* -------------------------------
+        FETCH MANAGERS
+  -------------------------------- */
   useEffect(() => {
     const fetchManagers = async () => {
       try {
@@ -32,25 +34,41 @@ const AddUserPage = () => {
         console.error("Error fetching managers:", error);
       }
     };
-
     fetchManagers();
   }, []);
 
-  /** 🔹 Handle Input Change */
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  /* -------------------------------
+        INPUT HANDLER
+  -------------------------------- */
+  const handleChange = (e) => {
+    const { name, value } = e.target;
 
-  /** 🔹 Submit Form */
+    // 🔥 CLEANUP ON ROLE CHANGE
+    if (name === "role") {
+      setForm((prev) => ({
+        ...prev,
+        role: value,
+        manager: "",
+        teamName: "",
+        position: "",
+      }));
+      return;
+    }
+
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  /* -------------------------------
+        SUBMIT HANDLER
+  -------------------------------- */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Required Fields
     if (!form.name || !form.email || !form.password) {
       alert("Please fill all required fields.");
       return;
     }
 
-    // Intern must have manager
     if (form.role === "intern" && !form.manager) {
       alert("Please assign a manager to the intern.");
       return;
@@ -63,7 +81,8 @@ const AddUserPage = () => {
     } catch (error) {
       console.error("Error adding user:", error);
       alert(
-        error.response?.data?.message || "❌ Failed to create user. Check console."
+        error.response?.data?.message ||
+          "❌ Failed to create user. Check console."
       );
     }
   };
@@ -86,7 +105,6 @@ const AddUserPage = () => {
         {/* FORM */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
-          {/* NAME */}
           <input
             type="text"
             name="name"
@@ -96,7 +114,6 @@ const AddUserPage = () => {
             className="border rounded-lg p-2"
           />
 
-          {/* EMAIL */}
           <input
             type="email"
             name="email"
@@ -106,7 +123,6 @@ const AddUserPage = () => {
             className="border rounded-lg p-2"
           />
 
-          {/* PHONE */}
           <input
             type="text"
             name="phone"
@@ -116,7 +132,6 @@ const AddUserPage = () => {
             className="border rounded-lg p-2"
           />
 
-          {/* PASSWORD */}
           <input
             type="password"
             name="password"
@@ -135,14 +150,13 @@ const AddUserPage = () => {
           >
             <option value="admin">Admin</option>
             <option value="manager">Manager</option>
-            <option value="employee">Probation Period</option>
+            <option value="employee">Probation Employee</option>
             <option value="intern">Intern</option>
           </select>
 
-          {/* INTERN FIELDS */}
+          {/* INTERN */}
           {form.role === "intern" && (
             <>
-              {/* Manager */}
               <select
                 name="manager"
                 value={form.manager}
@@ -157,7 +171,6 @@ const AddUserPage = () => {
                 ))}
               </select>
 
-              {/* Team Name */}
               <input
                 type="text"
                 name="teamName"
@@ -169,7 +182,7 @@ const AddUserPage = () => {
             </>
           )}
 
-          {/* PROBATION EMPLOYEE FIELDS */}
+          {/* EMPLOYEE */}
           {form.role === "employee" && (
             <>
               <input
@@ -197,7 +210,7 @@ const AddUserPage = () => {
             </>
           )}
 
-          {/* MANAGER FIELDS */}
+          {/* MANAGER */}
           {form.role === "manager" && (
             <input
               type="text"
@@ -209,7 +222,8 @@ const AddUserPage = () => {
             />
           )}
 
-          {/* JOINING DATE */}
+          {/* DATES */}
+          <label className="text-sm text-gray-600">Joining Date</label>
           <input
             type="date"
             name="joiningDate"
@@ -218,7 +232,7 @@ const AddUserPage = () => {
             className="border rounded-lg p-2"
           />
 
-          {/* BIRTHDAY */}
+          <label className="text-sm text-gray-600">Birthday</label>
           <input
             type="date"
             name="birthday"
@@ -227,17 +241,16 @@ const AddUserPage = () => {
             className="border rounded-lg p-2"
           />
 
-          {/* AVATAR URL */}
+          {/* AVATAR */}
           <input
             type="text"
             name="avatar"
-            placeholder="Avatar URL (optional)"
+            placeholder="Avatar Image URL (optional)"
             value={form.avatar}
             onChange={handleChange}
             className="border rounded-lg p-2"
           />
 
-          {/* SAVE BUTTON */}
           <button
             type="submit"
             className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg gap-2 transition"

@@ -4,6 +4,29 @@ import { useNavigate } from "react-router-dom";
 
 const UserTable = ({ users, onEdit, onDelete }) => {
   const navigate = useNavigate();
+  const loggedInUser = JSON.parse(localStorage.getItem("user"));
+
+  /* --------------------------------
+      HANDLE VIEW NAVIGATION SAFELY
+  -------------------------------- */
+  const handleView = (user) => {
+    // Admin can view anyone
+    if (loggedInUser.role === "admin") {
+      navigate(`/admin/user/${user._id}`);
+      return;
+    }
+
+    // Manager can view only their interns / employees
+    if (
+      loggedInUser.role === "manager" &&
+      user.manager === loggedInUser._id
+    ) {
+      navigate(`/manager/intern/${user._id}`);
+      return;
+    }
+
+    alert("You are not allowed to view this profile");
+  };
 
   return (
     <motion.table
@@ -21,40 +44,57 @@ const UserTable = ({ users, onEdit, onDelete }) => {
           <th className="p-3 border">Actions</th>
         </tr>
       </thead>
+
       <tbody>
         {users.map((user) => (
-          <tr
-            key={user._id}
-            className="hover:bg-gray-50 transition"
-          >
+          <tr key={user._id} className="hover:bg-gray-50 transition">
             <td className="p-3 border">{user.name}</td>
             <td className="p-3 border">{user.email}</td>
-            <td className="p-3 border capitalize">{user.role}</td>
-            <td className="p-3 border">
-              {user.role === "employee" ? user.position : user.teamName}
+
+            <td className="p-3 border capitalize">
+              {user.role === "employee" ? "Probation" : user.role}
             </td>
+
             <td className="p-3 border">
-              {new Date(user.joiningDate).toLocaleDateString()}
+              {user.role === "employee"
+                ? user.position || "-"
+                : user.teamName || "-"}
             </td>
+
+            <td className="p-3 border">
+              {user.joiningDate
+                ? new Date(user.joiningDate).toLocaleDateString()
+                : "-"}
+            </td>
+
             <td className="p-3 border space-x-2">
+              {/* VIEW */}
               <button
-                onClick={() => navigate(`/admin/user/${user._id}`)}
+                onClick={() => handleView(user)}
                 className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
               >
                 View
               </button>
-              <button
-                onClick={() => onEdit(user)}
-                className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => onDelete(user)}
-                className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-              >
-                Delete
-              </button>
+
+              {/* EDIT (Admin only) */}
+              {loggedInUser.role === "admin" && (
+                <button
+                  onClick={() => onEdit(user)}
+                  className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                >
+                  Edit
+                </button>
+              )}
+
+              {/* DELETE (Admin only) */}
+              {loggedInUser.role === "admin" && (
+                <button
+                  onClick={() => onDelete(user)}
+                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                >
+                  Delete
+                </button>
+              )}
             </td>
           </tr>
         ))}

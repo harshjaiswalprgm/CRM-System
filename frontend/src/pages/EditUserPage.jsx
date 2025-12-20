@@ -22,9 +22,9 @@ const EditUserPage = () => {
     avatar: "",
   });
 
-  /* -----------------------------------
+  /* -------------------------------
       FETCH USER + MANAGERS
-  ----------------------------------- */
+  -------------------------------- */
   useEffect(() => {
     fetchUser();
     fetchManagers();
@@ -51,7 +51,7 @@ const EditUserPage = () => {
         role: u.role || "intern",
         teamName: u.teamName || "",
         position: u.position || "",
-        manager: u.manager ? u.manager._id : "",
+        manager: u.manager?._id || "",
         joiningDate: u.joiningDate ? u.joiningDate.split("T")[0] : "",
         birthday: u.birthday ? u.birthday.split("T")[0] : "",
         avatar: u.avatar || "",
@@ -62,22 +62,36 @@ const EditUserPage = () => {
     }
   };
 
-  /* -----------------------------------
-            INPUT HANDLER
-  ----------------------------------- */
+  /* -------------------------------
+        INPUT HANDLER
+  -------------------------------- */
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    // 🔥 ROLE CHANGE CLEANUP
+    if (name === "role") {
+      setForm((prev) => ({
+        ...prev,
+        role: value,
+        manager: "",
+        position: "",
+        teamName: "",
+      }));
+      return;
+    }
+
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  /* -----------------------------------
-            SUBMIT HANDLER
-  ----------------------------------- */
+  /* -------------------------------
+        SUBMIT HANDLER
+  -------------------------------- */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Intern must have a manager
+    // ✅ Intern MUST have manager
     if (form.role === "intern" && !form.manager) {
-      alert("Please assign a manager to an intern.");
+      alert("Please assign a manager to the intern.");
       return;
     }
 
@@ -109,7 +123,6 @@ const EditUserPage = () => {
         {/* FORM */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
-          {/* NAME */}
           <input
             type="text"
             name="name"
@@ -119,16 +132,13 @@ const EditUserPage = () => {
             className="border rounded-lg p-2"
           />
 
-          {/* EMAIL (NOT EDITABLE) */}
           <input
             type="email"
-            placeholder="Email"
             value={form.email}
             disabled
             className="border rounded-lg p-2 bg-gray-100"
           />
 
-          {/* PHONE */}
           <input
             type="text"
             name="phone"
@@ -151,10 +161,9 @@ const EditUserPage = () => {
             <option value="intern">Intern</option>
           </select>
 
-          {/* INTERN FIELDS */}
+          {/* INTERN */}
           {form.role === "intern" && (
             <>
-              {/* Manager */}
               <select
                 name="manager"
                 value={form.manager}
@@ -169,7 +178,6 @@ const EditUserPage = () => {
                 ))}
               </select>
 
-              {/* Team */}
               <input
                 type="text"
                 name="teamName"
@@ -181,35 +189,19 @@ const EditUserPage = () => {
             </>
           )}
 
-          {/* EMPLOYEE FIELDS */}
+          {/* EMPLOYEE */}
           {form.role === "employee" && (
-            <>
-              <input
-                type="text"
-                name="position"
-                placeholder="Job Position"
-                value={form.position}
-                onChange={handleChange}
-                className="border rounded-lg p-2"
-              />
-
-              <select
-                name="manager"
-                value={form.manager}
-                onChange={handleChange}
-                className="border rounded-lg p-2"
-              >
-                <option value="">(Optional) Assign Manager</option>
-                {managers.map((m) => (
-                  <option key={m._id} value={m._id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            </>
+            <input
+              type="text"
+              name="position"
+              placeholder="Job Position"
+              value={form.position}
+              onChange={handleChange}
+              className="border rounded-lg p-2"
+            />
           )}
 
-          {/* MANAGER FIELDS */}
+          {/* MANAGER */}
           {form.role === "manager" && (
             <input
               type="text"
@@ -221,7 +213,8 @@ const EditUserPage = () => {
             />
           )}
 
-          {/* JOINING DATE */}
+          {/* DATES */}
+          <label className="text-sm text-gray-600">Joining Date</label>
           <input
             type="date"
             name="joiningDate"
@@ -230,7 +223,7 @@ const EditUserPage = () => {
             className="border rounded-lg p-2"
           />
 
-          {/* BIRTHDAY */}
+          <label className="text-sm text-gray-600">Birthday</label>
           <input
             type="date"
             name="birthday"
@@ -239,17 +232,16 @@ const EditUserPage = () => {
             className="border rounded-lg p-2"
           />
 
-          {/* AVATAR URL */}
+          {/* AVATAR */}
           <input
             type="text"
             name="avatar"
-            placeholder="Avatar URL"
+            placeholder="Avatar Image URL"
             value={form.avatar}
             onChange={handleChange}
             className="border rounded-lg p-2"
           />
 
-          {/* SAVE BUTTON */}
           <button
             type="submit"
             className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg gap-2 transition"

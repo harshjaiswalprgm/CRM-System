@@ -1,75 +1,131 @@
+// backend/routes/analytics.js
 import express from "express";
+import mongoose from "mongoose";
 import User from "../models/User.js";
 import Attendance from "../models/Attendance.js";
+import Revenue from "../models/Revenue.js";
+import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
 
-/**
- * ✅ OVERVIEW STATS (Dashboard Cards)
- * GET /api/analytics/overview
- */
-router.get("/analytics/overview", async (req, res) => {
+/* =====================================================
+   ✅ OVERVIEW STATS (ADMIN DASHBOARD CARDS)
+   GET /api/analytics/overview
+===================================================== */
+router.get("/overview", protect, async (req, res) => {
   try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
     const totalUsers = await User.countDocuments();
     const employees = await User.countDocuments({ role: "employee" });
     const interns = await User.countDocuments({ role: "intern" });
-    const totalRevenue = 54000; // Static for now — link real revenue later
+    const managers = await User.countDocuments({ role: "manager" });
 
+    // 🔹 Total Revenue (REAL)
+    const revenueAgg = await Revenue.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]);
+    const totalRevenue = revenueAgg[0]?.total || 0;
+
+    // 🔹 Active Today (Attendance)
     const today = new Date().toISOString().split("T")[0];
     const activeToday = await Attendance.countDocuments({ date: today });
 
-    res.status(200).json({
+    res.json({
       totalUsers,
       employees,
       interns,
+      managers,
       activeToday,
       revenue: totalRevenue,
     });
   } catch (error) {
-    console.error("❌ Error fetching overview:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error("❌ Analytics overview error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-/**
- * ✅ REVENUE CHART DATA
- * GET /api/analytics/revenue
- */
-router.get("/analytics/revenue", async (req, res) => {
+/* =====================================================
+   ✅ REVENUE CHART (DAY-WISE)
+   GET /api/analytics/revenue
+===================================================== */
+router.get("/revenue", protect, async (req, res) => {
   try {
-    // Temporary sample — replace with real DB logic later
-    const revenueData = [
-      { label: "Mon", amount: 1800 },
-      { label: "Tue", amount: 2200 },
-      { label: "Wed", amount: 3100 },
-      { label: "Thu", amount: 4000 },
-      { label: "Fri", amount: 5200 },
-      { label: "Sat", amount: 3500 },
-      { label: "Sun", amount: 2000 },
-    ];
-    res.status(200).json(revenueData);
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const revenue = await Revenue.aggregate([
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: "%Y-%m-%d", date: "$date" },
+          },
+          amount: { $sum: "$amount" },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    res.json(
+      revenue.map((r) => ({
+        date: r._id,
+        amount: r.amount,
+      }))
+    );
   } catch (error) {
-    console.error("❌ Error fetching revenue chart:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error("❌ Revenue chart error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-/**
- * ✅ TEAM PERFORMANCE CHART DATA
- * GET /api/analytics/performance
- */
-router.get("/analytics/performance", async (req, res) => {
+/* =====================================================
+   ✅ TEAM PERFORMANCE (USER-WISE)
+   GET /api/analytics/performance
+===================================================== */
+router.get("/performance", protect, async (req, res) => {
   try {
-    const teamPerformance = [
-      { name: "Harsh (Emp 1)", revenue: 4800 },
-      { name: "Aman (Intern)", revenue: 2500 },
-      { name: "Riya (Emp 2)", revenue: 4100 },
-      { name: "Aditi (Intern)", revenue: 2000 },
-    ];
-    res.status(200).json(teamPerformance);
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const performance = await Revenue.aggregate([
+      {
+        $group: {
+          _id: "$user",
+          revenue: { $sum: "$amount" },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      { $unwind: "$user" },
+      {
+        $project: {
+          name: "$user.name",
+          role: "$user.role",
+          revenue: 1,
+        },
+      },
+      { $sort: { revenue: -1 } },
+    ]);
+
+    res.json(performance);
   } catch (error) {
-    console.error("❌ Error fetching performance:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error("❌ Team performance error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

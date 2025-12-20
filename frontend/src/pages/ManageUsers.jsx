@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import api from "../utils/api";
+import api from "../api/axios"; // ✅ FIXED (use same api everywhere)
 import UserTable from "../components/UserTable";
 import UserModal from "../components/UserModal";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
@@ -11,6 +11,9 @@ const ManageUsers = () => {
   const [showDelete, setShowDelete] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
 
+  /* ------------------------
+      FETCH ALL USERS
+  ------------------------ */
   const fetchUsers = async () => {
     try {
       const res = await api.get("/users");
@@ -25,6 +28,9 @@ const ManageUsers = () => {
     fetchUsers();
   }, []);
 
+  /* ------------------------
+      HANDLERS
+  ------------------------ */
   const handleAdd = () => {
     setSelectedUser(null);
     setIsEdit(false);
@@ -64,7 +70,7 @@ const ManageUsers = () => {
       fetchUsers();
     } catch (err) {
       console.error("Error saving user:", err);
-      alert("Failed to save user");
+      alert(err.response?.data?.message || "Failed to save user");
     }
   };
 
@@ -72,7 +78,10 @@ const ManageUsers = () => {
     <div className="p-8 bg-gray-100 min-h-screen">
       <div className="bg-white shadow-md rounded-xl p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold text-gray-700">Manage Users</h2>
+          <h2 className="text-2xl font-semibold text-gray-700">
+            Manage Users
+          </h2>
+
           <button
             onClick={handleAdd}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
@@ -88,15 +97,18 @@ const ManageUsers = () => {
         />
       </div>
 
+      {/* ✅ USER MODAL */}
       {showModal && (
         <UserModal
           user={selectedUser}
           isEdit={isEdit}
+          allUsers={users}
           onClose={() => setShowModal(false)}
           onSave={handleSave}
         />
       )}
 
+      {/* DELETE CONFIRM */}
       {showDelete && (
         <ConfirmDeleteModal
           user={selectedUser}

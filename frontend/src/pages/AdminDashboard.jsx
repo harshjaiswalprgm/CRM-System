@@ -7,7 +7,6 @@ import TeamPerformanceChart from "../components/TeamPerformanceChart";
 import AnnouncementList from "../components/AnnouncementList";
 import AddAnnouncement from "../components/AddAnnouncement";
 import api from "../api/axios";
-import ManageUsers from "../components/ManageUsers";
 
 const AdminDashboard = () => {
   const [user, setUser] = useState(null);
@@ -24,20 +23,31 @@ const AdminDashboard = () => {
     const userData = JSON.parse(localStorage.getItem("user"));
     setUser(userData);
 
-    const fetchStats = async () => {
-      try {
-        const res = await api.get("/analytics/overview");
-        setStats(res.data);
-      } catch (err) {
-        console.warn(
-          "Analytics API missing → Dashboard lite mode enabled",
-          err.message
-        );
-      }
-    };
-
-    fetchStats();
+    fetchStatsFallback();
   }, []);
+
+  /* ---------------- SAFE ANALYTICS (NO 404) ---------------- */
+  const fetchStatsFallback = async () => {
+    try {
+      const usersRes = await api.get("/users");
+      const users = usersRes.data;
+
+      const totalUsers = users.length;
+      const interns = users.filter((u) => u.role === "intern").length;
+      const employees = users.filter((u) => u.role === "employee").length;
+      const managers = users.filter((u) => u.role === "manager").length;
+
+      setStats((prev) => ({
+        ...prev,
+        totalUsers,
+        interns,
+        employees,
+        managers,
+      }));
+    } catch (error) {
+      console.error("Admin stats fallback failed:", error);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.clear();
@@ -47,19 +57,33 @@ const AdminDashboard = () => {
   return (
     <div className="flex">
       <Sidebar onLogout={handleLogout} />
+
       <div className="flex-1 ml-64 p-6 bg-gray-100 min-h-screen">
         <Navbar user={user} />
 
+        {/* ================= ANALYTICS ================= */}
         <AnalyticsCards data={stats} />
 
-        <RevenueChart />
+        {/* ================= REVENUE ================= */}
+        <div className="mt-8 bg-white rounded-xl shadow p-6">
+          <h2 className="text-xl font-semibold text-gray-700 mb-4">
+            Revenue Overview
+          </h2>
+          <RevenueChart />
+        </div>
 
-        <TeamPerformanceChart />
+        {/* ================= TEAM PERFORMANCE ================= */}
+        <div className="mt-8 bg-white rounded-xl shadow p-6">
+          <h2 className="text-xl font-semibold text-gray-700 mb-4">
+            Team Performance
+          </h2>
+          <TeamPerformanceChart />
+        </div>
 
-        <div className="mt-8">
+        {/* ================= ANNOUNCEMENTS ================= */}
+        <div className="mt-8 bg-white rounded-xl shadow p-6">
           <AddAnnouncement />
           <AnnouncementList />
-          <ManageUsers />
         </div>
       </div>
     </div>

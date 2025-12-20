@@ -2,27 +2,24 @@ import mongoose from "mongoose";
 
 const attendanceSchema = new mongoose.Schema(
   {
-    // ✅ Reference to User (intern, employee, or admin)
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
 
-    // ✅ Role helps admin/employee filter quickly
     role: {
       type: String,
-      enum: ["admin", "employee", "intern"],
+      enum: ["admin", "manager", "employee", "intern"],
       required: true,
     },
 
-    // ✅ Date stored in YYYY-MM-DD format for easy grouping
+    // YYYY-MM-DD
     date: {
       type: String,
       required: true,
     },
 
-    // ✅ Array of attendance events for the day
     events: [
       {
         type: {
@@ -39,21 +36,15 @@ const attendanceSchema = new mongoose.Schema(
         },
         time: {
           type: Date,
-          required: true,
           default: Date.now,
         },
       },
     ],
-
-    // ✅ Optional computed total hours
-    totalHours: {
-      type: Number,
-      default: 0,
-    },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
+
+// 🔥 One attendance doc per user per day
+attendanceSchema.index({ user: 1, date: 1 }, { unique: true });
 
 export default mongoose.model("Attendance", attendanceSchema);

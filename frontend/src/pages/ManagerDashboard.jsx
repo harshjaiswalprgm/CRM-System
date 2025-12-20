@@ -6,9 +6,9 @@ import api from "../api/axios";
 
 const ManagerDashboard = () => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user"));
+  const loggedInUser = JSON.parse(localStorage.getItem("user"));
 
-  const [interns, setInterns] = useState([]);
+  const [assignedUsers, setAssignedUsers] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
 
   const handleLogout = () => {
@@ -16,21 +16,21 @@ const ManagerDashboard = () => {
     window.location.href = "/";
   };
 
-  /* ---------------------------------------------
-      FETCH INTERN + PROBATION EMPLOYEE LIST
-  --------------------------------------------- */
-  const fetchInterns = async () => {
+  /* -------------------------------
+     FETCH ASSIGNED INTERNS / EMPLOYEES
+  -------------------------------- */
+  const fetchAssignedUsers = async () => {
     try {
-      const res = await api.get("/users/manager/interns"); // backend route only returns assigned users
-      setInterns(res.data);
+      const res = await api.get("/users/manager/interns");
+      setAssignedUsers(res.data);
     } catch (error) {
-      console.error("Error fetching interns:", error);
+      console.error("Error fetching assigned users:", error);
     }
   };
 
-  /* ---------------------------------------------
-      FETCH ANNOUNCEMENTS
-  --------------------------------------------- */
+  /* -------------------------------
+     FETCH ANNOUNCEMENTS
+  -------------------------------- */
   const fetchAnnouncements = async () => {
     try {
       const res = await api.get("/announcements");
@@ -41,7 +41,7 @@ const ManagerDashboard = () => {
   };
 
   useEffect(() => {
-    fetchInterns();
+    fetchAssignedUsers();
     fetchAnnouncements();
   }, []);
 
@@ -50,33 +50,49 @@ const ManagerDashboard = () => {
       <Sidebar onLogout={handleLogout} />
 
       <div className="flex-1 ml-64 p-6 bg-gray-100 min-h-screen">
-        <Navbar user={user} />
+        <Navbar user={loggedInUser} />
 
-        {/* ⭐ MANAGER PROFILE CARD */}
+        {/* ================= MANAGER PROFILE ================= */}
         <div className="bg-white rounded-xl shadow p-6 mt-6">
-          <h2 className="text-2xl font-bold text-gray-800">Manager Dashboard</h2>
+          <h2 className="text-2xl font-bold text-gray-800">
+            Manager Dashboard
+          </h2>
           <p className="text-gray-500 mt-1">
-            Manage your interns, probation employees, track performance & update stipends.
+            Manage your interns & probation employees, track performance, and
+            update stipends.
           </p>
 
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 border rounded-lg shadow-sm bg-gray-50">
-              <p className="text-gray-600 text-sm">Name</p>
-              <p className="font-semibold">{user?.name}</p>
-            </div>
+          <div className="mt-6 flex items-center gap-6">
+            <img
+              src={
+                loggedInUser?.avatar ||
+                "https://via.placeholder.com/100"
+              }
+              alt="Manager Avatar"
+              className="w-20 h-20 rounded-full border"
+            />
 
-            <div className="p-4 border rounded-lg shadow-sm bg-gray-50">
-              <p className="text-gray-600 text-sm">Email</p>
-              <p className="font-semibold">{user?.email}</p>
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
+              <div className="p-4 border rounded-lg bg-gray-50">
+                <p className="text-sm text-gray-600">Name</p>
+                <p className="font-semibold">{loggedInUser?.name}</p>
+              </div>
 
-            <div className="p-4 border rounded-lg shadow-sm bg-gray-50">
-              <p className="text-gray-600 text-sm">Team</p>
-              <p className="font-semibold">{user?.teamName || "No team assigned"}</p>
+              <div className="p-4 border rounded-lg bg-gray-50">
+                <p className="text-sm text-gray-600">Email</p>
+                <p className="font-semibold">{loggedInUser?.email}</p>
+              </div>
+
+              <div className="p-4 border rounded-lg bg-gray-50">
+                <p className="text-sm text-gray-600">Team</p>
+                <p className="font-semibold">
+                  {loggedInUser?.teamName || "Not Assigned"}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* ⭐ Stipend Button */}
+          {/* STIPEND BUTTON */}
           <div className="mt-6">
             <button
               onClick={() => navigate("/manager/stipend")}
@@ -87,13 +103,13 @@ const ManagerDashboard = () => {
           </div>
         </div>
 
-        {/* ⭐ INTERN + PROBATION LIST */}
+        {/* ================= ASSIGNED USERS ================= */}
         <div className="bg-white rounded-xl shadow p-6 mt-8">
           <h3 className="text-xl font-semibold text-gray-800 mb-4">
-            Your Interns & Probation Employees
+            Assigned Interns & Probation Employees
           </h3>
 
-          {interns.length === 0 ? (
+          {assignedUsers.length === 0 ? (
             <p className="text-gray-500">No users assigned to you yet.</p>
           ) : (
             <table className="w-full border">
@@ -103,20 +119,22 @@ const ManagerDashboard = () => {
                   <th className="p-3 border">Email</th>
                   <th className="p-3 border">Role</th>
                   <th className="p-3 border">Team</th>
-                  <th className="p-3 border">Actions</th>
+                  <th className="p-3 border">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {interns.map((user) => (
-                  <tr key={user._id} className="border">
-                    <td className="p-3 border">{user.name}</td>
-                    <td className="p-3 border">{user.email}</td>
-                    <td className="p-3 border capitalize">{user.role}</td>
-                    <td className="p-3 border">{user.teamName}</td>
+                {assignedUsers.map((u) => (
+                  <tr key={u._id} className="border">
+                    <td className="p-3 border">{u.name}</td>
+                    <td className="p-3 border">{u.email}</td>
+                    <td className="p-3 border capitalize">{u.role}</td>
+                    <td className="p-3 border">{u.teamName || "-"}</td>
                     <td className="p-3 border">
                       <button
-                        onClick={() => navigate(`/manager/intern/${user._id}`)}
-                        className="text-blue-600 hover:text-blue-800"
+                        onClick={() =>
+                          navigate(`/admin/user/${u._id}`)
+                        }
+                        className="text-blue-600 hover:text-blue-800 font-medium"
                       >
                         View Performance
                       </button>
@@ -128,7 +146,7 @@ const ManagerDashboard = () => {
           )}
         </div>
 
-        {/* ⭐ ANNOUNCEMENTS */}
+        {/* ================= ANNOUNCEMENTS ================= */}
         <div className="bg-white rounded-xl shadow p-6 mt-8">
           <h3 className="text-xl font-semibold text-gray-800 mb-4">
             Announcements
@@ -141,10 +159,10 @@ const ManagerDashboard = () => {
               {announcements.map((a) => (
                 <li
                   key={a._id}
-                  className="border p-3 rounded-lg bg-gray-50 shadow-sm"
+                  className="border p-3 rounded-lg bg-gray-50"
                 >
                   <p className="font-semibold">{a.title}</p>
-                  <p className="text-gray-600 text-sm">{a.message}</p>
+                  <p className="text-sm text-gray-600">{a.message}</p>
                   <p className="text-xs text-gray-400 mt-1">
                     {new Date(a.createdAt).toLocaleString()}
                   </p>

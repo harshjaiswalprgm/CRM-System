@@ -1,25 +1,22 @@
 import express from "express";
 import Attendance from "../models/Attendance.js";
+import User from "../models/User.js";
+import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
 
-/**
- * ✅ POST /api/attendance/mark
- * Marks attendance events like checkIn, lunchOut, lunchIn, breakOut, breakIn, checkOut and in this order same admin can also mark attendance for any user
- */
-router.post("/mark", async (req, res) => {
+/* =====================================================
+   ✅ MARK ATTENDANCE
+   Self | Admin | Manager (for team)
+===================================================== */
+router.post("/mark", protect, async (req, res) => {
   try {
-    const { userId, role, type } = req.body;
+    const { userId, type } = req.body;
 
-    // ✅ Input validation
-    if (!userId || !type || !role) {
-      console.warn("⚠️ Missing required fields:", { userId, role, type });
-      return res
-        .status(400)
-        .json({ message: "User ID, role, and type are required." });
+    if (!userId || !type) {
+      return res.status(400).json({ message: "userId and type required" });
     }
 
-    // ✅ Ensure valid type
     const allowedTypes = [
       "checkIn",
       "lunchOut",
@@ -28,130 +25,184 @@ router.post("/mark", async (req, res) => {
       "breakIn",
       "checkOut",
     ];
+
     if (!allowedTypes.includes(type)) {
-      return res
-        .status(400)
-        .json({ message: `Invalid attendance type: ${type}` });
+      return res.status(400).json({ message: "Invalid attendance type" });
     }
 
-    // ✅ Get current date (YYYY-MM-DD)
-    const date = new Date().toISOString().split("T")[0];
+    const targetUser = await User.findById(userId);
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-    // ✅ Find or create record
-    let record = await Attendance.findOne({ user: userId, date });
+    // 🔐 Permission check
+    const isSelf = req.user._id.toString() === userId;
+    const isAdmin = req.user.role === "admin";
+    const isManagerForUser =
+      req.user.role === "manager" &&
+      targetUser.manager?.toString() === req.user._id.toString();
+
+    if (!isSelf && !isAdmin && !isManagerForUser) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const today = new Date().toISOString().split("T")[0];
+
+    let record = await Attendance.findOne({ user: userId, date: today });
+
     if (!record) {
-      record = new Attendance({ user: userId, role, date, events: [] });
+      record = new Attendance({
+        user: userId,
+        role: targetUser.role, // ✅ CORRECT ROLE
+        date: today,
+        events: [],
+      });
     }
 
-    // ✅ Prevent duplicate same-type entries
-    const alreadyMarked = record.events.some((e) => e.type === type);
-    if (alreadyMarked) {
-      return res
-        .status(400)
-        .json({ message: `${type} already marked for today.` });
+    if (record.events.some((e) => e.type === type)) {
+      return res.status(400).json({ message: `${type} already marked` });
     }
 
-    // ✅ Add new attendance event
     record.events.push({ type, time: new Date() });
     await record.save();
 
-    res.status(200).json({
-      success: true,
-      message: `${type} marked successfully.`,
-      record,
-    });
+    res.json({ success: true, record });
   } catch (error) {
-    console.error("❌ Attendance marking error:", error);
-    res.status(500).json({
-      message: "Server error while marking attendance.",
-      error: error.message,
-    });
+    console.error("Attendance mark error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-/**
- * ✅ GET /api/attendance
- * Fetch all attendance records (admin use)
- */
-router.get("/", async (req, res) => {
+/* =====================================================
+   ✅ GET MY ATTENDANCE
+===================================================== */
+router.get("/me", protect, async (req, res) => {
   try {
+    const records = await Attendance.find({ user: req.user._id }).sort({
+      date: -1,
+    });
+    res.json(records);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* =====================================================
+   ✅ MANAGER → TEAM ATTENDANCE
+===================================================== */
+router.get("/team", protect, async (req, res) => {
+  try {
+    if (req.user.role !== "manager") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const teamUsers = await User.find({
+      manager: req.user._id,
+      role: { $in: ["intern", "employee"] },
+    }).select("_id");
+
+    const ids = teamUsers.map((u) => u._id);
+
+    const records = await Attendance.find({ user: { $in: ids } })
+      .populate("user", "name email role")
+      .sort({ date: -1 });
+
+    res.json(records);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* =====================================================
+   ✅ ADMIN → ALL ATTENDANCE
+===================================================== */
+router.get("/all", protect, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
     const records = await Attendance.find()
       .populate("user", "name email role")
       .sort({ date: -1 });
-    res.status(200).json(records);
+
+    res.json(records);
   } catch (error) {
-    console.error("❌ Error fetching attendance records:", error);
-    res.status(500).json({
-      message: "Server error while fetching records.",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-/**
- * ✅ GET /api/attendance/summary/:userId
- * Fetch attendance summary for one user
- */
-router.get("/summary/:userId", async (req, res) => {
+/* =====================================================
+   ✅ SUMMARY (SELF | MANAGER | ADMIN)
+===================================================== */
+router.get("/summary/:userId", protect, async (req, res) => {
   try {
-    const userId = req.params.userId;
-    const records = await Attendance.find({ user: userId }).sort({ date: -1 });
+    const { userId } = req.params;
 
-    if (!records.length) {
-      return res.json({ totalDays: 0, summary: [] });
+    const targetUser = await User.findById(userId);
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
     }
 
+    const isSelf = req.user._id.toString() === userId;
+    const isAdmin = req.user.role === "admin";
+    const isManagerForUser =
+      req.user.role === "manager" &&
+      targetUser.manager?.toString() === req.user._id.toString();
+
+    if (!isSelf && !isAdmin && !isManagerForUser) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const records = await Attendance.find({ user: userId });
+
     const summary = records.map((r) => {
-      const checkIn = r.events.find((e) => e.type === "checkIn");
-      const checkOut = r.events.find((e) => e.type === "checkOut");
+      const inTime = r.events.find((e) => e.type === "checkIn");
+      const outTime = r.events.find((e) => e.type === "checkOut");
 
       let hours = 0;
-      if (checkIn && checkOut) {
-        const diff = new Date(checkOut.time) - new Date(checkIn.time);
-        hours = Math.round((diff / (1000 * 60 * 60)) * 10) / 10;
+      if (inTime && outTime) {
+        hours =
+          Math.round(
+            ((new Date(outTime.time) - new Date(inTime.time)) /
+              (1000 * 60 * 60)) *
+              10
+          ) / 10;
       }
 
-      return {
-        date: r.date,
-        totalHours: hours,
-        events: r.events,
-      };
+      return { date: r.date, hours, events: r.events };
     });
 
-    res.status(200).json({ totalDays: records.length, summary });
+    res.json({ totalDays: summary.length, summary });
   } catch (error) {
-    console.error("❌ Error generating summary:", error);
-    res.status(500).json({
-      message: "Server error while generating summary.",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-/**
- * ✅ GET /api/attendance/filter
- * Admin can filter attendance by role and date range
- * Example: /api/attendance/filter?role=intern&start=2025-10-25&end=2025-10-28
- */
-router.get("/filter", async (req, res) => {
+/* =====================================================
+   ✅ EXPORT (ADMIN)
+===================================================== */
+router.get("/export", protect, async (req, res) => {
   try {
-    const { role, start, end } = req.query;
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
 
-    const query = {};
-    if (role) query.role = role;
-    if (start && end) query.date = { $gte: start, $lte: end };
-
-    const records = await Attendance.find(query)
+    const records = await Attendance.find()
       .populate("user", "name email role")
       .sort({ date: -1 });
 
-    res.status(200).json(records);
+    const exportData = records.map((r) => ({
+      Name: r.user.name,
+      Email: r.user.email,
+      Role: r.user.role,
+      Date: r.date,
+      Events: r.events.map((e) => `${e.type}@${e.time}`).join(", "),
+    }));
+
+    res.json(exportData);
   } catch (error) {
-    console.error("❌ Error filtering attendance:", error);
-    res.status(500).json({
-      message: "Server error while filtering attendance.",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
