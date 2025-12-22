@@ -7,6 +7,7 @@ import ManagerDashboard from "./pages/ManagerDashboard";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import InternDashboard from "./pages/InternDashboard";
 import ManagerStipend from "./pages/ManagerStipend";
+import ManagerRevenue from "./pages/ManagerRevenue";
 
 import UserProfile from "./pages/UserProfile";
 import AdminProfile from "./pages/AdminProfile";
@@ -24,12 +25,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user"));
 
-  // Not logged in
   if (!token || !user) {
     return <Navigate to="/" replace />;
   }
 
-  // Role not allowed
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
   }
@@ -136,6 +135,14 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={["manager"]}>
               <ManagerStipend />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manager/revenue"
+          element={
+            <ProtectedRoute allowedRoles={["manager"]}>
+              <ManagerRevenue />
             </ProtectedRoute>
           }
         />

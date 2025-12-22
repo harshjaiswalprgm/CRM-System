@@ -1,6 +1,4 @@
-// backend/routes/analytics.js
 import express from "express";
-import mongoose from "mongoose";
 import User from "../models/User.js";
 import Attendance from "../models/Attendance.js";
 import Revenue from "../models/Revenue.js";
@@ -9,7 +7,7 @@ import { protect } from "../middleware/auth.js";
 const router = express.Router();
 
 /* =====================================================
-   ✅ OVERVIEW STATS (ADMIN DASHBOARD CARDS)
+   ✅ ADMIN OVERVIEW (REAL DATA)
    GET /api/analytics/overview
 ===================================================== */
 router.get("/overview", protect, async (req, res) => {
@@ -23,7 +21,10 @@ router.get("/overview", protect, async (req, res) => {
     const interns = await User.countDocuments({ role: "intern" });
     const managers = await User.countDocuments({ role: "manager" });
 
-    // 🔹 Total Revenue (REAL)
+    const today = new Date().toISOString().split("T")[0];
+    const activeToday = await Attendance.countDocuments({ date: today });
+
+    // ✅ TOTAL COMPANY REVENUE (ALL REVENUE DOCS)
     const revenueAgg = await Revenue.aggregate([
       {
         $group: {
@@ -32,11 +33,8 @@ router.get("/overview", protect, async (req, res) => {
         },
       },
     ]);
-    const totalRevenue = revenueAgg[0]?.total || 0;
 
-    // 🔹 Active Today (Attendance)
-    const today = new Date().toISOString().split("T")[0];
-    const activeToday = await Attendance.countDocuments({ date: today });
+    const totalRevenue = revenueAgg[0]?.total || 0;
 
     res.json({
       totalUsers,
@@ -47,13 +45,13 @@ router.get("/overview", protect, async (req, res) => {
       revenue: totalRevenue,
     });
   } catch (error) {
-    console.error("❌ Analytics overview error:", error);
+    console.error("Analytics overview error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
 
 /* =====================================================
-   ✅ REVENUE CHART (DAY-WISE)
+   ✅ ADMIN REVENUE CHART (DAY-WISE)
    GET /api/analytics/revenue
 ===================================================== */
 router.get("/revenue", protect, async (req, res) => {
@@ -62,7 +60,7 @@ router.get("/revenue", protect, async (req, res) => {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    const revenue = await Revenue.aggregate([
+    const data = await Revenue.aggregate([
       {
         $group: {
           _id: {
@@ -75,19 +73,19 @@ router.get("/revenue", protect, async (req, res) => {
     ]);
 
     res.json(
-      revenue.map((r) => ({
-        date: r._id,
-        amount: r.amount,
+      data.map((d) => ({
+        date: d._id,
+        amount: d.amount,
       }))
     );
   } catch (error) {
-    console.error("❌ Revenue chart error:", error);
+    console.error("Revenue chart error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
 
 /* =====================================================
-   ✅ TEAM PERFORMANCE (USER-WISE)
+   ✅ ADMIN TEAM PERFORMANCE (USER-WISE)
    GET /api/analytics/performance
 ===================================================== */
 router.get("/performance", protect, async (req, res) => {
@@ -96,7 +94,7 @@ router.get("/performance", protect, async (req, res) => {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    const performance = await Revenue.aggregate([
+    const data = await Revenue.aggregate([
       {
         $group: {
           _id: "$user",
@@ -114,17 +112,17 @@ router.get("/performance", protect, async (req, res) => {
       { $unwind: "$user" },
       {
         $project: {
+          _id: 0,
           name: "$user.name",
-          role: "$user.role",
           revenue: 1,
         },
       },
       { $sort: { revenue: -1 } },
     ]);
 
-    res.json(performance);
+    res.json(data);
   } catch (error) {
-    console.error("❌ Team performance error:", error);
+    console.error("Performance analytics error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });

@@ -10,9 +10,8 @@ const router = express.Router();
  * -----------------------------------
  * 📌 ADD / UPDATE DAILY REVENUE
  * -----------------------------------
- * Admin  → anyone
+ * Admin   → anyone
  * Manager → assigned interns / employees
- * User → self only
  */
 router.post("/add", protect, async (req, res) => {
   try {
@@ -27,33 +26,34 @@ router.post("/add", protect, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // 🔐 ROLE CHECK
+    /* ================= ROLE CHECK ================= */
     if (req.user.role === "manager") {
       if (targetUser.manager?.toString() !== req.user._id.toString()) {
         return res.status(403).json({ message: "Not your assigned user" });
       }
     }
 
-    if (
-      req.user.role !== "admin" &&
-      req.user.role !== "manager" &&
-      req.user._id.toString() !== userId
-    ) {
+    if (req.user.role !== "admin" && req.user.role !== "manager") {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
+    /* ================= DATE NORMALIZATION ================= */
     const revenueDate = date
       ? new Date(new Date(date).setHours(0, 0, 0, 0))
       : new Date(new Date().setHours(0, 0, 0, 0));
 
-    // ✅ UPSERT = one revenue per day
+    /* ================= UPSERT DAILY REVENUE ================= */
     const entry = await Revenue.findOneAndUpdate(
-      { user: userId, date: revenueDate },
+      {
+        user: userId,
+        date: revenueDate,
+      },
       {
         $set: {
-          amount,
-          manager: targetUser.manager || null,
+          amount: Number(amount),
+          manager: req.user.role === "manager" ? req.user._id : null,
           description: "Daily revenue update",
+          date: revenueDate,
         },
       },
       { new: true, upsert: true }
@@ -80,21 +80,18 @@ router.get("/:userId", protect, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // 🔐 ACCESS RULES
+    /* ================= ACCESS RULES ================= */
     if (req.user.role === "manager") {
       if (targetUser.manager?.toString() !== req.user._id.toString()) {
         return res.status(403).json({ message: "Not your assigned user" });
       }
     }
 
-    if (
-      req.user.role !== "admin" &&
-      req.user.role !== "manager" &&
-      req.user._id.toString() !== userId
-    ) {
+    if (req.user.role !== "admin" && req.user.role !== "manager") {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
+    /* ================= FETCH DAILY REVENUE ================= */
     const entries = await Revenue.find({ user: userId })
       .sort({ date: 1 })
       .select("date amount");

@@ -64,10 +64,7 @@ const ManagerDashboard = () => {
 
           <div className="mt-6 flex items-center gap-6">
             <img
-              src={
-                loggedInUser?.avatar ||
-                "https://via.placeholder.com/100"
-              }
+              src={loggedInUser?.avatar || "https://via.placeholder.com/100"}
               alt="Manager Avatar"
               className="w-20 h-20 rounded-full border"
             />
@@ -100,6 +97,13 @@ const ManagerDashboard = () => {
             >
               Manage Intern Stipends
             </button>
+
+            <button
+              onClick={() => navigate("/manager/revenue")}
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold transition ml-3"
+            >
+              Update Revenue
+            </button>
           </div>
         </div>
 
@@ -131,9 +135,7 @@ const ManagerDashboard = () => {
                     <td className="p-3 border">{u.teamName || "-"}</td>
                     <td className="p-3 border">
                       <button
-                        onClick={() =>
-                          navigate(`/admin/user/${u._id}`)
-                        }
+                        onClick={() => navigate(`/admin/user/${u._id}`)}
                         className="text-blue-600 hover:text-blue-800 font-medium"
                       >
                         View Performance
@@ -157,10 +159,7 @@ const ManagerDashboard = () => {
           ) : (
             <ul className="space-y-3">
               {announcements.map((a) => (
-                <li
-                  key={a._id}
-                  className="border p-3 rounded-lg bg-gray-50"
-                >
+                <li key={a._id} className="border p-3 rounded-lg bg-gray-50">
                   <p className="font-semibold">{a.title}</p>
                   <p className="text-sm text-gray-600">{a.message}</p>
                   <p className="text-xs text-gray-400 mt-1">
