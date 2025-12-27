@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
+import AttendancePanel from "../components/AttendancePanel";
+import AttendanceSummary from "../components/AttendanceSummary";
 import api from "../api/axios";
 
 const ManagerDashboard = () => {
@@ -16,9 +18,7 @@ const ManagerDashboard = () => {
     window.location.href = "/";
   };
 
-  /* -------------------------------
-     FETCH ASSIGNED INTERNS / EMPLOYEES
-  -------------------------------- */
+  /* ---------------- FETCH ASSIGNED USERS ---------------- */
   const fetchAssignedUsers = async () => {
     try {
       const res = await api.get("/users/manager/interns");
@@ -28,9 +28,7 @@ const ManagerDashboard = () => {
     }
   };
 
-  /* -------------------------------
-     FETCH ANNOUNCEMENTS
-  -------------------------------- */
+  /* ---------------- FETCH ANNOUNCEMENTS ---------------- */
   const fetchAnnouncements = async () => {
     try {
       const res = await api.get("/announcements");
@@ -58,13 +56,12 @@ const ManagerDashboard = () => {
             Manager Dashboard
           </h2>
           <p className="text-gray-500 mt-1">
-            Manage your interns & probation employees, track performance, and
-            update stipends.
+            Manage interns, track performance, update revenue & attendance.
           </p>
 
           <div className="mt-6 flex items-center gap-6">
             <img
-              src={loggedInUser?.avatar || "https://via.placeholder.com/100"}
+              src={loggedInUser?.avatar || "/avatar.png"}
               alt="Manager Avatar"
               className="w-20 h-20 rounded-full border"
             />
@@ -89,7 +86,7 @@ const ManagerDashboard = () => {
             </div>
           </div>
 
-          {/* STIPEND BUTTON */}
+          {/* ACTION BUTTONS */}
           <div className="mt-6">
             <button
               onClick={() => navigate("/manager/stipend")}
@@ -105,6 +102,12 @@ const ManagerDashboard = () => {
               Update Revenue
             </button>
           </div>
+        </div>
+
+        {/* ================= MANAGER ATTENDANCE ================= */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+          <AttendancePanel />
+          <AttendanceSummary />
         </div>
 
         {/* ================= ASSIGNED USERS ================= */}
@@ -135,7 +138,9 @@ const ManagerDashboard = () => {
                     <td className="p-3 border">{u.teamName || "-"}</td>
                     <td className="p-3 border">
                       <button
-                        onClick={() => navigate(`/admin/user/${u._id}`)}
+                        onClick={() =>
+                          navigate(`/manager/view-dashboard/${u._id}`)
+                        }
                         className="text-blue-600 hover:text-blue-800 font-medium"
                       >
                         View Performance

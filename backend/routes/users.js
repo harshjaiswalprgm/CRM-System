@@ -158,23 +158,40 @@ router.get(
 /* ===============================
    GET USER PROFILE
 ================================ */
+
 router.get("/:id", protect, async (req, res) => {
   try {
-    if (
-      req.user.role !== "admin" &&
-      req.user._id.toString() !== req.params.id
-    ) {
-      return res.status(403).json({ message: "Unauthorized" });
+    const targetUser = await User.findById(req.params.id);
+
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
     }
 
-    const user = await User.findById(req.params.id)
-      .select("-password")
-      .populate("manager", "name email role");
+    // ✅ ADMIN → can view anyone
+    if (req.user.role === "admin") {
+      return res.json(targetUser);
+    }
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+    // ✅ SELF → can view own profile
+    if (req.user._id.toString() === targetUser._id.toString()) {
+      return res.json(targetUser);
+    }
 
-    res.json(user);
-  } catch (err) {
+    // ✅ MANAGER → can view assigned interns / employees
+    if (req.user.role === "manager") {
+      if (
+        targetUser.manager &&
+        targetUser.manager.toString() === req.user._id.toString()
+      ) {
+        return res.json(targetUser);
+      }
+    }
+
+    // ❌ Otherwise forbidden
+    return res.status(403).json({ message: "Unauthorized" });
+
+  } catch (error) {
+    console.error("User fetch error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });

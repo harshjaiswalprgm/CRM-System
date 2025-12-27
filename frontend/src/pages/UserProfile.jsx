@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { ArrowLeft } from "lucide-react";
 import RevenueChart from "../components/RevenueChart";
-import AttendanceSummary from "../components/AttendanceSummary";
+import AttendanceChart from "../components/AttendanceChart";
+import defaultAvatar from "../assets/defaultavatar.png";
 
 const UserProfile = () => {
   const { id } = useParams();
@@ -51,8 +52,8 @@ const UserProfile = () => {
   /* ---------------- FETCH ATTENDANCE ---------------- */
   const fetchAttendance = async () => {
     try {
-      const res = await api.get(`/attendance/user/${id}`);
-      setAttendance(res.data);
+      const res = await api.get(`/attendance/summary/${id}`);
+      setAttendance(res.data.summary || []);
     } catch (err) {
       console.warn("Attendance not found");
       setAttendance([]);
@@ -100,11 +101,9 @@ const UserProfile = () => {
   if (!user) return <p className="p-6">Loading...</p>;
 
   const canManageSalary =
-    loggedInUser?.role === "admin" ||
-    loggedInUser?.role === "manager";
+    loggedInUser?.role === "admin" || loggedInUser?.role === "manager";
 
-  const hideSalaryForUser =
-    user.role === "intern" || user.role === "employee";
+  const hideSalaryForUser = user.role === "intern" || user.role === "employee";
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
@@ -119,10 +118,11 @@ const UserProfile = () => {
       <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
         <div className="flex items-center gap-6">
           <img
-            src={user.avatar || "https://via.placeholder.com/100"}
+            src={user.avatar ? user.avatar : defaultAvatar}
             alt={user.name}
-            className="w-20 h-20 rounded-full border"
+            className="w-20 h-20 rounded-full border object-cover"
           />
+
           <div>
             <h2 className="text-2xl font-semibold">{user.name}</h2>
             <p className="text-gray-600">{user.email}</p>
@@ -150,7 +150,7 @@ const UserProfile = () => {
           <h3 className="font-semibold mb-4 text-gray-800">
             Attendance Summary
           </h3>
-          <AttendanceSummary data={attendance} />
+          <AttendanceChart data={attendance} />
         </div>
       </div>
 
@@ -218,9 +218,7 @@ const UserProfile = () => {
                     <p>Base: ₹{s.baseSalary}</p>
                     <p>Incentives: ₹{s.bonus}</p>
                     <p>Deductions: ₹{s.deductions}</p>
-                    <p className="font-bold">
-                      Net Pay: ₹{s.totalSalary}
-                    </p>
+                    <p className="font-bold">Net Pay: ₹{s.totalSalary}</p>
                   </li>
                 ))}
               </ul>

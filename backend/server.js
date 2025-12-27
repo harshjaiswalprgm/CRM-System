@@ -2,13 +2,12 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import { connectDB } from "./config/db.js";
-
 // Route Imports
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import attendanceRoutes from "./routes/attendance.js";
 import announcementRoutes from "./routes/announcements.js";
-import revenueRoutes from "./routes/revenue.js";        // ✅ Corrected import of the revenue routes and placement through this file and update on github
+import revenueRoutes from "./routes/revenue.js";        // ✅ Corrected import of the revenue routes and placement
 import analyticsRoutes from "./routes/analytics.js";
 import performanceRoutes from "./routes/performance.js";
 import salaryRoutes from "./routes/salary.js";
@@ -26,7 +25,8 @@ app.use(express.json());
 // DB Connection
 connectDB(MONGO_URI);
 
-// Test Route
+// Test <Route>
+// </Route>
 app.get("/hello", (req, res) => {
   res.json({ message: "Hello from CRM backend" });
 });

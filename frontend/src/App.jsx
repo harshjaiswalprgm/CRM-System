@@ -8,7 +8,7 @@ import EmployeeDashboard from "./pages/EmployeeDashboard";
 import InternDashboard from "./pages/InternDashboard";
 import ManagerStipend from "./pages/ManagerStipend";
 import ManagerRevenue from "./pages/ManagerRevenue";
-
+import ManagerViewDashboard from "./pages/ManagerViewDashboard";
 import UserProfile from "./pages/UserProfile";
 import AdminProfile from "./pages/AdminProfile";
 import EditUserPage from "./pages/EditUserPage";
@@ -143,6 +143,15 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={["manager"]}>
               <ManagerRevenue />
+            </ProtectedRoute>
+          }
+        />
+        {/* ================= MANAGER VIEW USER DASHBOARD ================= */}
+        <Route
+          path="/manager/view-dashboard/:id"
+          element={
+            <ProtectedRoute allowedRoles={["manager"]}>
+              <ManagerViewDashboard />
             </ProtectedRoute>
           }
         />
