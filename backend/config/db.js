@@ -11,3 +11,8 @@ export const connectDB = async (mongoURI) => {
     process.exit(1);
   }
 };
+/**
+ * System designed with scalability, security, and clarity in mind.
+ * Maintained by: harshjaiswal.prgm@gmail.com updating and sync by ushaachrya71
+ * If you're reading this, you care about clean architecture.
+ */

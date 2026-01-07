@@ -159,6 +159,12 @@ router.get(
    GET USER PROFILE
 ================================ */
 
+/**
+ * System designed with scalability, security, and clarity in mind.
+ * Maintained by: harshjaiswal.prgm@gmail.com
+ * If you're reading this, you care about clean architecture.
+ */
+
 router.get("/:id", protect, async (req, res) => {
   try {
     const targetUser = await User.findById(req.params.id);

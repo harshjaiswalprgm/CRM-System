@@ -6,9 +6,10 @@ import Navbar from "../components/Navbar";
 import RevenueChart from "../components/RevenueChart";
 import AttendanceSummary from "../components/AttendanceSummary";
 import { ArrowLeft } from "lucide-react";
+import { motion } from "framer-motion";
 
 const ManagerViewDashboard = () => {
-  const { id } = useParams(); // 👈 TARGET USER ID
+  const { id } = useParams(); // target user id
   const navigate = useNavigate();
   const manager = JSON.parse(localStorage.getItem("user"));
 
@@ -22,7 +23,6 @@ const ManagerViewDashboard = () => {
     fetchAttendance();
   }, [id]);
 
-  /* ================= FETCH TARGET USER ================= */
   const fetchUser = async () => {
     try {
       const res = await api.get(`/users/${id}`);
@@ -32,17 +32,15 @@ const ManagerViewDashboard = () => {
     }
   };
 
-  /* ================= FETCH REVENUE ================= */
   const fetchPerformance = async () => {
     try {
       const res = await api.get(`/revenue/${id}`);
-      setPerformance(res.data);
-    } catch (err) {
+      setPerformance(res.data || []);
+    } catch {
       setPerformance([]);
     }
   };
 
-  /* ================= FETCH ATTENDANCE ================= */
   const fetchAttendance = async () => {
     try {
       const res = await api.get(`/attendance/summary/${id}`);
@@ -52,46 +50,78 @@ const ManagerViewDashboard = () => {
     }
   };
 
-  if (!user) return <p className="p-6">Loading...</p>;
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-500">
+        Loading dashboard…
+      </div>
+    );
+  }
 
   return (
     <div className="flex">
       <Sidebar />
 
-      <div className="flex-1 ml-64 p-6 bg-gray-100 min-h-screen">
+      <div className="flex-1 md:ml-64 p-4 sm:p-6 bg-gray-100 min-h-screen">
         <Navbar user={manager} />
 
+        {/* BACK */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-gray-600 mb-4"
+          className="flex items-center gap-2 text-sm text-gray-600 hover:text-orange-600 transition mb-4"
         >
-          <ArrowLeft size={18} /> Back
+          <ArrowLeft size={18} />
+          Back to Manager Dashboard
         </button>
 
-        {/* ================= PROFILE ================= */}
-        <div className="bg-white p-6 rounded-xl shadow mb-6">
-          <h2 className="text-2xl font-bold">{user.name}</h2>
+        {/* PROFILE CARD */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="bg-white rounded-xl shadow p-6 mb-6 border-l-4 border-orange-500"
+        >
+          <h2 className="text-2xl font-bold text-gray-800">{user.name}</h2>
           <p className="text-gray-600">{user.email}</p>
-          <p className="capitalize text-sm text-gray-500">{user.role}</p>
-        </div>
+          <span className="inline-block mt-2 text-xs px-3 py-1 rounded-full bg-orange-100 text-orange-700 capitalize">
+            {user.role}
+          </span>
+        </motion.div>
 
-        {/* ================= PERFORMANCE ================= */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h3 className="font-semibold mb-3">Revenue Performance</h3>
+        {/* DATA GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* REVENUE */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white p-6 rounded-xl shadow"
+          >
+            <h3 className="font-semibold text-gray-700 mb-3">
+              💰 Revenue Performance
+            </h3>
             <RevenueChart data={performance} />
-          </div>
+          </motion.div>
 
-          <div className="bg-white p-6 rounded-xl shadow">
-            <h3 className="font-semibold mb-3">Attendance Summary</h3>
+          {/* ATTENDANCE */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white p-6 rounded-xl shadow"
+          >
+            <h3 className="font-semibold text-gray-700 mb-3">
+              🕒 Attendance Summary
+            </h3>
             <AttendanceSummary data={attendance} />
-          </div>
+          </motion.div>
         </div>
 
-        {/* 🔒 READ-ONLY NOTICE */}
-        <p className="text-sm text-gray-500 mt-6">
-          * Read-only view. Managers cannot modify data here.
-        </p>
+        {/* NOTICE */}
+        <div className="mt-6 text-xs text-gray-500 bg-orange-50 border border-orange-200 p-3 rounded-lg">
+          🔒 This is a <strong>read-only view</strong>. Managers cannot edit
+          revenue or attendance from this screen.
+        </div>
       </div>
     </div>
   );

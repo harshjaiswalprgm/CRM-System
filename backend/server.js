@@ -13,6 +13,7 @@ import analyticsRoutes from "./routes/analytics.js";
 import performanceRoutes from "./routes/performance.js";
 import salaryRoutes from "./routes/salary.js";
 import leaveRoutes from "./routes/leave.js";
+import birthdayRoutes from "./routes/birthday.js";
 
 dotenv.config();
 
@@ -43,6 +44,8 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/performance", performanceRoutes); // ✅ TOP PERFORMERS
 app.use("/api/salary", salaryRoutes);
 app.use("/api/leaves", leaveRoutes);
+app.use("/api/birthday", birthdayRoutes);
+
 
 // ================= GLOBAL ERROR HANDLER =================
 app.use((err, req, res, next) => {

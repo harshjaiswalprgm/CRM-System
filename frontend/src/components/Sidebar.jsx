@@ -36,63 +36,65 @@ const Sidebar = ({ onLogout, isOpen, setIsOpen }) => {
       initial={{ x: -260 }}
       animate={{ x: 0 }}
       exit={{ x: -260 }}
-      transition={{ duration: 0.3 }}
+      transition={{ type: "spring", stiffness: 260, damping: 25 }}
       className="w-64 h-screen fixed left-0 top-0 z-50 flex flex-col
-      bg-gradient-to-b from-orange-500 via-orange-600 to-orange-800
+      bg-gradient-to-b from-orange-400 via-orange-700 to-orange-700
       shadow-2xl text-white"
     >
-      {/* Header */}
+      {/* HEADER */}
       <div className="p-6 border-b border-orange-300/30 relative">
-        <h2 className="text-3xl font-bold tracking-wide text-center">
+        <h2 className="text-2xl font-extrabold tracking-wide text-center">
           Glowlogics
         </h2>
-        <p className="text-sm text-center text-orange-100 mt-1">
-          Admin Panel
+        <p className="text-xs text-center text-orange-100 mt-1 tracking-wider">
+          ADMIN PANEL
         </p>
 
-        {/* Mobile close */}
+        {/* MOBILE CLOSE */}
         <button
           onClick={() => setIsOpen(false)}
-          className="absolute top-4 right-4 md:hidden"
+          className="absolute top-4 right-4 md:hidden text-white/80 hover:text-white"
         >
-          <X size={24} />
+          <X size={22} />
         </button>
       </div>
 
-      {/* Nav */}
-      <nav className="flex flex-col mt-8 space-y-1 px-4">
+      {/* NAV */}
+      <nav className="flex flex-col mt-6 space-y-1 px-3">
         {links.map((link) => {
           const active = location.pathname === link.path;
+
           return (
             <Link
               key={link.name}
               to={link.path}
               onClick={() => setIsOpen(false)}
-              className={`flex items-center gap-3 px-4 py-2 rounded-lg font-medium transition-all
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium transition-all duration-200
                 ${
                   active
-                    ? "bg-orange-100/20 text-yellow-300 border-l-4 border-yellow-400"
-                    : "hover:bg-orange-400/30 hover:text-yellow-200 text-white/90"
+                    ? "bg-white/20 text-yellow-300 shadow-inner"
+                    : "hover:bg-white/10 hover:text-yellow-200 text-white/90"
                 }`}
             >
-              {link.icon}
-              {link.name}
+              <span className="opacity-90">{link.icon}</span>
+              <span className="text-sm tracking-wide">{link.name}</span>
             </Link>
           );
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="mt-auto mb-4 mx-4 border-t border-orange-300/30 pt-4">
+      {/* FOOTER */}
+      <div className="mt-auto mb-5 mx-4 border-t border-orange-300/30 pt-4">
         <button
           onClick={onLogout}
-          className="flex items-center gap-3 px-4 py-2 text-red-200 hover:text-red-400 hover:bg-orange-400/20 rounded-lg transition-all w-full"
+          className="flex items-center gap-3 px-4 py-2.5 text-red-200 hover:text-red-400
+          hover:bg-white/10 rounded-xl transition-all w-full"
         >
-          <LogOut size={20} />
-          Logout
+          <LogOut size={18} />
+          <span className="text-sm font-medium">Logout</span>
         </button>
 
-        <p className="text-xs text-orange-200 text-center mt-3 opacity-70">
+        <p className="text-[11px] text-orange-200 text-center mt-4 opacity-70">
           © 2025 Glowlogics
         </p>
       </div>
@@ -101,17 +103,17 @@ const Sidebar = ({ onLogout, isOpen, setIsOpen }) => {
 
   return (
     <>
-      {/* Desktop */}
+      {/* DESKTOP */}
       <div className="hidden md:block">{SidebarContent}</div>
 
-      {/* Mobile */}
+      {/* MOBILE */}
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Overlay */}
+            {/* OVERLAY */}
             <motion.div
               initial={{ opacity: 0 }}
-              animate={{ opacity: 0.4 }}
+              animate={{ opacity: 0.45 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
               className="fixed inset-0 bg-black z-40 md:hidden"

@@ -5,6 +5,7 @@ import AttendancePanel from "../components/AttendancePanel";
 import Announcements from "../components/Announcements";
 import api from "../api/axios";
 import TopPerformers from "../components/TopPerformers";
+import BirthdayBanner from "../components/BirthdayBanner";
 
 import {
   BarChart,
@@ -130,6 +131,7 @@ const InternDashboard = () => {
             )}
           </div>
         </div>
+        <BirthdayBanner />
 
         {/* ================= ANNOUNCEMENTS ================= */}
         <div className="mt-10">

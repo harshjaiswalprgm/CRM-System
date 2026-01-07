@@ -9,6 +9,7 @@ import TopPerformers from "../components/TopPerformers";
 import LeaveSummary from "./LeaveSummary";
 import ApplyLeave from "./ApplyLeave";
 import MyLeave from "./MyLeave";
+import BirthdayBanner from "../components/BirthdayBanner";
 
 import {
   BarChart,
@@ -86,6 +87,7 @@ const EmployeeDashboard = () => {
           Attendance
         </h2>
         <AttendancePanel />
+        <BirthdayBanner />
 
         {/* ================= TOP PERFORMERS ================= */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">

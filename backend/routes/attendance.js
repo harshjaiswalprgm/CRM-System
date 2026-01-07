@@ -166,7 +166,7 @@ router.get("/summary/:userId", protect, async (req, res) => {
           Math.round(
             ((new Date(outTime.time) - new Date(inTime.time)) /
               (1000 * 60 * 60)) *
-              10
+            10
           ) / 10;
       }
 
@@ -178,6 +178,71 @@ router.get("/summary/:userId", protect, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+/* =====================================================
+   ✅ ACTIVE TODAY (ADMIN / MANAGER)
+   Auto inactive after X hours
+===================================================== */
+router.get("/active-today", protect, async (req, res) => {
+  try {
+    if (!["admin", "manager"].includes(req.user.role)) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const today = new Date().toISOString().split("T")[0];
+    const MAX_ACTIVE_HOURS = 9;
+    const now = new Date();
+
+    // Step 1: find today's attendance with checkIn
+    const records = await Attendance.find({
+      date: today,
+      "events.type": "checkIn",
+    }).populate("user", "name role teamName manager");
+
+    // Step 2: filter ACTIVE users
+    const activeUsers = records.filter((record) => {
+      const events = record.events;
+
+      const checkIn = events.find((e) => e.type === "checkIn");
+      const checkOut = events.find((e) => e.type === "checkOut");
+
+      // ❌ Already checked out
+      if (checkOut) return false;
+
+      if (!checkIn) return false;
+
+      // ⏱️ Hours since check-in
+      const hoursPassed =
+        (now - new Date(checkIn.time)) / (1000 * 60 * 60);
+
+      // ❌ Auto inactive after X hours
+      if (hoursPassed > MAX_ACTIVE_HOURS) return false;
+
+      // 🔐 Manager → only team users
+      if (
+        req.user.role === "manager" &&
+        record.user.manager?.toString() !== req.user._id.toString()
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+
+    // Step 3: send clean response
+    res.json(
+      activeUsers.map((r) => ({
+        _id: r.user._id,
+        name: r.user.name,
+        role: r.user.role,
+        teamName: r.user.teamName || "-",
+      }))
+    );
+  } catch (error) {
+    console.error("Active today error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 /* =====================================================
    ✅ EXPORT (ADMIN)

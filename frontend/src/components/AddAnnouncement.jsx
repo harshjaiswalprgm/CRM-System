@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import api from "../api/axios";
 import { toast } from "react-toastify";
+import { Megaphone } from "lucide-react";
 
 const AddAnnouncement = () => {
   const [form, setForm] = useState({
@@ -27,42 +28,87 @@ const AddAnnouncement = () => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-6 mt-8">
-      <h3 className="text-gray-700 font-semibold mb-4">🗞️ Create Announcement</h3>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="text"
-          placeholder="Title"
-          value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-          className="w-full border rounded-lg p-2"
-          required
-        />
-        <textarea
-          placeholder="Message"
-          value={form.message}
-          onChange={(e) => setForm({ ...form, message: e.target.value })}
-          className="w-full border rounded-lg p-2"
-          rows="3"
-          required
-        ></textarea>
-        <select
-          value={form.type}
-          onChange={(e) => setForm({ ...form, type: e.target.value })}
-          className="w-full border rounded-lg p-2"
-        >
-          <option value="general">General</option>
-          <option value="birthday">Birthday</option>
-          <option value="work-anniversary">Work Anniversary</option>
-          <option value="festival">Festival</option>
-          <option value="event">Event</option>
-        </select>
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-        >
-          Post Announcement
-        </button>
+    <div className="bg-white rounded-2xl shadow-lg p-6 mt-8">
+      {/* HEADER */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="bg-blue-100 p-2 rounded-lg">
+          <Megaphone className="text-blue-600" size={22} />
+        </div>
+        <div>
+          <h3 className="text-xl font-bold text-gray-800">
+            Create Announcement
+          </h3>
+          <p className="text-sm text-gray-500">
+            Share updates with your team
+          </p>
+        </div>
+      </div>
+
+      {/* FORM */}
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* TITLE */}
+        <div>
+          <label className="text-sm font-medium text-gray-600">
+            Title
+          </label>
+          <input
+            type="text"
+            placeholder="Announcement title"
+            value={form.title}
+            onChange={(e) =>
+              setForm({ ...form, title: e.target.value })
+            }
+            className="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+        </div>
+
+        {/* MESSAGE */}
+        <div>
+          <label className="text-sm font-medium text-gray-600">
+            Message
+          </label>
+          <textarea
+            placeholder="Write your announcement message..."
+            value={form.message}
+            onChange={(e) =>
+              setForm({ ...form, message: e.target.value })
+            }
+            rows="4"
+            className="mt-1 w-full rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+            required
+          />
+        </div>
+
+        {/* TYPE */}
+        <div>
+          <label className="text-sm font-medium text-gray-600">
+            Announcement Type
+          </label>
+          <select
+            value={form.type}
+            onChange={(e) =>
+              setForm({ ...form, type: e.target.value })
+            }
+            className="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="general">📢 General</option>
+            <option value="birthday">🎂 Birthday</option>
+            <option value="work-anniversary">🏆 Work Anniversary</option>
+            <option value="festival">🎉 Festival</option>
+            <option value="event">📅 Event</option>
+          </select>
+        </div>
+
+        {/* BUTTON */}
+        <div className="pt-2">
+          <button
+            type="submit"
+            className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition shadow-md"
+          >
+            Publish Announcement
+          </button>
+        </div>
       </form>
     </div>
   );

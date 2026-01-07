@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import api from "../api/axios"; // ✅ FIXED (use same api everywhere)
+import api from "../api/axios";
 import UserTable from "../components/UserTable";
 import UserModal from "../components/UserModal";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
+import { motion } from "framer-motion";
 
 const ManageUsers = () => {
   const [users, setUsers] = useState([]);
@@ -11,9 +12,7 @@ const ManageUsers = () => {
   const [showDelete, setShowDelete] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
 
-  /* ------------------------
-      FETCH ALL USERS
-  ------------------------ */
+  /* ================= FETCH USERS ================= */
   const fetchUsers = async () => {
     try {
       const res = await api.get("/users");
@@ -28,9 +27,7 @@ const ManageUsers = () => {
     fetchUsers();
   }, []);
 
-  /* ------------------------
-      HANDLERS
-  ------------------------ */
+  /* ================= HANDLERS ================= */
   const handleAdd = () => {
     setSelectedUser(null);
     setIsEdit(false);
@@ -75,29 +72,51 @@ const ManageUsers = () => {
   };
 
   return (
-    <div className="p-8 bg-gray-100 min-h-screen">
-      <div className="bg-white shadow-md rounded-xl p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold text-gray-700">
-            Manage Users
-          </h2>
+    <div className="p-3 sm:p-6 bg-gray-100 min-h-screen">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="bg-white shadow-xl rounded-2xl p-4 sm:p-6"
+      >
+        {/* HEADER */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
+              👥 Manage Users
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">
+              Create, edit, assign roles & manage team structure
+            </p>
+          </div>
 
           <button
             onClick={handleAdd}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            className="
+              w-full sm:w-auto
+              bg-gradient-to-r from-orange-500 to-orange-600
+              text-white px-5 py-2.5 rounded-xl font-semibold
+              hover:shadow-lg hover:scale-[1.02]
+              transition-all
+            "
           >
             + Add New User
           </button>
         </div>
 
-        <UserTable
-          users={users}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-      </div>
+        {/* TABLE WRAPPER */}
+        <div className="relative -mx-4 sm:mx-0 overflow-x-auto">
+          <div className="min-w-[700px] sm:min-w-full px-4 sm:px-0">
+            <UserTable
+              users={users}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          </div>
+        </div>
+      </motion.div>
 
-      {/* ✅ USER MODAL */}
+      {/* USER MODAL */}
       {showModal && (
         <UserModal
           user={selectedUser}

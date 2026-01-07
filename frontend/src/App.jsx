@@ -146,7 +146,12 @@ const App = () => {
             </ProtectedRoute>
           }
         />
-        {/* ================= MANAGER VIEW USER DASHBOARD ================= */}
+        {/* ================= MANAGER VIEW USER DASHBOARD
+        /**
+ * System designed with scalability, security, and clarity in mind.
+ * Maintained by: harshjaiswal.prgm@gmail.com updating and sync by ushaachrya71
+ * If you're reading this, you care about clean architecture.
+  ================= */}
         <Route
           path="/manager/view-dashboard/:id"
           element={

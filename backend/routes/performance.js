@@ -58,6 +58,73 @@ router.get("/", protect, async (req, res) => {
 
 /**
  * ------------------------------------------------
+ * 📊 ADMIN → MANAGER-WISE REVENUE (DAILY / MONTHLY)
+ * ------------------------------------------------
+ * GET /api/performance/manager-revenue?type=daily|monthly
+ */
+router.get("/manager-revenue", protect, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const { type = "daily" } = req.query;
+
+    const startDate = new Date();
+    startDate.setHours(0, 0, 0, 0);
+
+    // DAILY → only today
+    if (type === "daily") {
+      // already start of today
+    }
+
+    // MONTHLY → first day of month
+    if (type === "monthly") {
+      startDate.setDate(1);
+    }
+
+    const data = await Revenue.aggregate([
+      {
+        $match: {
+          date: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: "$manager",
+          revenue: { $sum: "$amount" },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "manager",
+        },
+      },
+      { $unwind: "$manager" },
+      {
+        $project: {
+          _id: 0,
+          managerId: "$manager._id",
+          managerName: "$manager.name",
+          revenue: 1,
+        },
+      },
+      { $sort: { revenue: -1 } },
+    ]);
+
+    res.json(data);
+  } catch (error) {
+    console.error("Manager revenue error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+/**
+ * ------------------------------------------------
  * 🏆 TOP PERFORMERS (DAILY / WEEKLY / MONTHLY)
  * ------------------------------------------------
  * URL: /api/performance/top?type=daily|weekly|monthly

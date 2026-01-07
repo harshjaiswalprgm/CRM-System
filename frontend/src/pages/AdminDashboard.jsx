@@ -7,51 +7,66 @@ import TeamPerformanceChart from "../components/TeamPerformanceChart";
 import AnnouncementList from "../components/AnnouncementList";
 import AddAnnouncement from "../components/AddAnnouncement";
 import AdminLeaveApproval from "../components/AdminLeaveApproval";
-import api from "../api/axios";
 import TopPerformers from "../components/TopPerformers";
+import ManagerRevenue from "../components/ManagerRevenue";
+import api from "../api/axios";
+import BirthdayBanner from "../components/BirthdayBanner";
 
 const AdminDashboard = () => {
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    employees: 0,
-    interns: 0,
-    managers: 0,
-    activeToday: 0,
-    revenue: 0,
-  });
-
+  const [stats, setStats] = useState({});
   const [revenueData, setRevenueData] = useState([]);
   const [performanceData, setPerformanceData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem("user"));
-    if (!userData) return;
+  // 📅 Excel filters
+  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [year, setYear] = useState(new Date().getFullYear());
 
-    setUser(userData);
+  useEffect(() => {
+    const u = JSON.parse(localStorage.getItem("user"));
+    if (!u) return;
+    setUser(u);
     fetchAdminAnalytics();
   }, []);
 
-  /* ================= REAL ANALYTICS ================= */
+  /* ================= FETCH ANALYTICS ================= */
   const fetchAdminAnalytics = async () => {
     try {
-      const [overviewRes, revenueRes, performanceRes] =
-        await Promise.all([
-          api.get("/analytics/overview"),
-          api.get("/analytics/revenue"),
-          api.get("/analytics/performance"),
-        ]);
-
-      setStats(overviewRes.data);
-      setRevenueData(revenueRes.data);
-      setPerformanceData(performanceRes.data);
-    } catch (error) {
-      console.error("Admin analytics failed:", error);
+      const [o, r, p] = await Promise.all([
+        api.get("/analytics/overview"),
+        api.get("/analytics/revenue"),
+        api.get("/analytics/performance"),
+      ]);
+      setStats(o.data);
+      setRevenueData(r.data);
+      setPerformanceData(p.data);
+    } catch (err) {
+      console.error("Admin analytics failed", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  /* ================= DOWNLOAD LEAVE EXCEL ================= */
+  const downloadLeaveExcel = async () => {
+    try {
+      const res = await api.get(`/leaves/export?month=${month}&year=${year}`, {
+        responseType: "blob",
+      });
+
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Leave_Report_${month}_${year}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error("Leave export failed", err);
+      alert("Failed to download leave report");
     }
   };
 
@@ -60,13 +75,7 @@ const AdminDashboard = () => {
     window.location.href = "/";
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Loading dashboard…
-      </div>
-    );
-  }
+  if (!user) return null;
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -77,63 +86,76 @@ const AdminDashboard = () => {
         setIsOpen={setSidebarOpen}
       />
 
-      {/* MAIN CONTENT */}
-      <div className="flex-1 p-4 sm:p-6 md:ml-64 bg-gray-100 min-h-screen">
+      {/* MAIN */}
+      <div className="flex-1 p-4 md:ml-64">
+        <Navbar user={user} onMenuClick={() => setSidebarOpen(true)} />
 
-        {/* NAVBAR */}
-        <Navbar
-          user={user}
-          onMenuClick={() => setSidebarOpen(true)}
-        />
-
-        {/* ================= ANALYTICS CARDS ================= */}
+        {/* ANALYTICS */}
         <AnalyticsCards data={stats} loading={loading} />
 
-        {/* ================= REVENUE ================= */}
-        <div className="mt-8 bg-white rounded-xl shadow p-4 md:p-6">
-          <h2 className="text-lg md:text-xl font-semibold text-gray-700 mb-4">
-            Revenue Overview
-          </h2>
+        <div className="mt-8 bg-white p-6 rounded-xl shadow">
           <RevenueChart data={revenueData} />
         </div>
 
-        {/* ================= TEAM PERFORMANCE ================= */}
-        <div className="mt-8 bg-white rounded-xl shadow p-4 md:p-6">
-          <h2 className="text-lg md:text-xl font-semibold text-gray-700 mb-4">
-            Team Performance
-          </h2>
+        <div className="mt-8 bg-white p-6 rounded-xl shadow">
           <TeamPerformanceChart data={performanceData} />
         </div>
 
-        {/* ================= TOP PERFORMERS ================= */}
+        {/* MANAGER-WISE REVENUE */}
+        <ManagerRevenue />
+        <BirthdayBanner />
+
+        {/* TOP PERFORMERS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
           <TopPerformers type="daily" title="🏅 Daily Top Performers" />
           <TopPerformers type="weekly" title="🔥 Weekly Top Performers" />
           <TopPerformers type="monthly" title="🏆 Monthly Top Performers" />
         </div>
 
-        {/* ================= LEAVE APPROVAL ================= */}
-        <div className="bg-white rounded-xl shadow p-4 md:p-6 mt-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-            <h2 className="text-lg md:text-xl font-semibold text-gray-800">
-              Leave Approvals
-            </h2>
+        {/* LEAVES + EXCEL */}
+        <div className="bg-white rounded-xl shadow p-6 mt-10">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+            <h2 className="text-xl font-semibold">Leave Approvals</h2>
 
-            {/* <button
-              onClick={() =>
-                window.open("/api/leaves/export", "_blank")
-              }
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg w-full md:w-auto"
-            >
-              Download Leave Excel
-            </button> */}
+            <div className="flex gap-2 flex-wrap">
+              <select
+                value={month}
+                onChange={(e) => setMonth(e.target.value)}
+                className="border rounded-lg px-3 py-2"
+              >
+                {[...Array(12)].map((_, i) => (
+                  <option key={i + 1} value={i + 1}>
+                    Month {i + 1}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                className="border rounded-lg px-3 py-2"
+              >
+                {[2024, 2025, 2026].map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                onClick={downloadLeaveExcel}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+              >
+                ⬇ Download Excel
+              </button>
+            </div>
           </div>
 
           <AdminLeaveApproval />
         </div>
 
-        {/* ================= ANNOUNCEMENTS ================= */}
-        <div className="mt-8 bg-white rounded-xl shadow p-4 md:p-6">
+        {/* ANNOUNCEMENTS */}
+        <div className="mt-10 bg-white p-6 rounded-xl shadow">
           <AddAnnouncement />
           <AnnouncementList />
         </div>

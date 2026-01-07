@@ -154,7 +154,11 @@ const UserProfile = () => {
         </div>
       </div>
 
-      {/* ================= SALARY (ADMIN / MANAGER ONLY) ================= */}
+      {/* ================= SALARY (ADMIN / MANAGER ONLY) /**
+ * System designed with scalability, security, and clarity in mind.
+ * Maintained by: harshjaiswal.prgm@gmail.com updating and sync by ushaachrya71
+ * If you're reading this, you care about clean architecture.
+  ================= */}
       {canManageSalary && !hideSalaryForUser && (
         <div className="bg-white p-6 rounded-xl shadow-md mt-6">
           <h3 className="text-xl font-semibold mb-4 text-gray-800">

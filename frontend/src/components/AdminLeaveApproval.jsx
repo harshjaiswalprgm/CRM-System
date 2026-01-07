@@ -46,27 +46,15 @@ const AdminLeaveApproval = () => {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-3">
         <div>
-          <h2 className="text-xl font-semibold">
-            Manager Leave Approvals
-          </h2>
+          <h2 className="text-xl font-semibold">Manager Leave Approvals</h2>
           <p className="text-sm text-gray-500">
             Review and approve manager leave requests
           </p>
         </div>
-
-        {/* ✅ EXCEL DOWNLOAD */}
-        <button
-          onClick={() => window.open("/api/leaves/export", "_blank")}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded w-full md:w-auto"
-        >
-          Download Leave Excel
-        </button>
       </div>
 
       {leaves.length === 0 ? (
-        <p className="text-gray-500">
-          ✅ No pending manager leave requests
-        </p>
+        <p className="text-gray-500">✅ No pending manager leave requests</p>
       ) : (
         <>
           {/* ================= DESKTOP TABLE ================= */}
@@ -88,9 +76,7 @@ const AdminLeaveApproval = () => {
                 {leaves.map((l) => (
                   <tr key={l._id}>
                     <td className="p-3 border">{l.user.name}</td>
-                    <td className="p-3 border">
-                      {l.user.teamName || "-"}
-                    </td>
+                    <td className="p-3 border">{l.user.teamName || "-"}</td>
                     <td className="p-3 border capitalize">{l.type}</td>
                     <td className="p-3 border">
                       {new Date(l.fromDate).toLocaleDateString()}
@@ -105,18 +91,14 @@ const AdminLeaveApproval = () => {
                     <td className="p-3 border space-x-2">
                       <button
                         disabled={processingId === l._id}
-                        onClick={() =>
-                          handleAction(l._id, "approved")
-                        }
+                        onClick={() => handleAction(l._id, "approved")}
                         className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded disabled:opacity-50"
                       >
                         Approve
                       </button>
                       <button
                         disabled={processingId === l._id}
-                        onClick={() =>
-                          handleAction(l._id, "rejected")
-                        }
+                        onClick={() => handleAction(l._id, "rejected")}
                         className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded disabled:opacity-50"
                       >
                         Reject
@@ -131,10 +113,7 @@ const AdminLeaveApproval = () => {
           {/* ================= MOBILE CARDS ================= */}
           <div className="space-y-4 md:hidden">
             {leaves.map((l) => (
-              <div
-                key={l._id}
-                className="border rounded-lg p-4 bg-gray-50"
-              >
+              <div key={l._id} className="border rounded-lg p-4 bg-gray-50">
                 <div className="flex justify-between items-center mb-2">
                   <p className="font-semibold">{l.user.name}</p>
                   <span className="capitalize text-sm text-gray-600">
@@ -155,25 +134,19 @@ const AdminLeaveApproval = () => {
                   Days: <strong>{l.totalDays}</strong>
                 </p>
 
-                <p className="text-sm text-gray-600">
-                  Reason: {l.reason}
-                </p>
+                <p className="text-sm text-gray-600">Reason: {l.reason}</p>
 
                 <div className="flex gap-3 mt-3">
                   <button
                     disabled={processingId === l._id}
-                    onClick={() =>
-                      handleAction(l._id, "approved")
-                    }
+                    onClick={() => handleAction(l._id, "approved")}
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded disabled:opacity-50"
                   >
                     Approve
                   </button>
                   <button
                     disabled={processingId === l._id}
-                    onClick={() =>
-                      handleAction(l._id, "rejected")
-                    }
+                    onClick={() => handleAction(l._id, "rejected")}
                     className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded disabled:opacity-50"
                   >
                     Reject

@@ -10,6 +10,7 @@ import ApplyLeave from "./ApplyLeave";
 import MyLeave from "./MyLeave";
 import api from "../api/axios";
 import TopPerformers from "../components/TopPerformers";
+import BirthdayBanner from "../components/BirthdayBanner";
 
 const ManagerDashboard = () => {
   const navigate = useNavigate();
@@ -135,7 +136,7 @@ const ManagerDashboard = () => {
           <AttendancePanel />
           <AttendanceSummary />
         </div>
-
+<BirthdayBanner />
         {/* ================= MANAGER MY LEAVE ================= */}
         {role === "manager" && (
           <div className="bg-white rounded-xl shadow p-6 mt-8 space-y-6">
