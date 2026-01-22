@@ -20,7 +20,7 @@ const Login = () => {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      toast.success(`Welcome User ${data.user.name}!`);
+      toast.success(`Welcome ${data.user.name}!`);
 
       if (data.user.role === "admin") navigate("/admin");
       else if (data.user.role === "manager") navigate("/manager");
@@ -85,7 +85,7 @@ const Login = () => {
             className="mb-8"
           >
             <h2 className="text-3xl font-bold text-gray-900">
-              Welcome back 👋
+              Welcome Back User 👋
             </h2>
             <p className="text-gray-500 mt-1 text-sm">
               Login to access your dashboard
