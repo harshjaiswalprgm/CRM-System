@@ -20,7 +20,7 @@ const Login = () => {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      toast.success(`Welcome ${data.user.name}!`);
+      toast.success(`Welcome User ${data.user.name}!`);
 
       if (data.user.role === "admin") navigate("/admin");
       else if (data.user.role === "manager") navigate("/manager");
@@ -32,12 +32,15 @@ const Login = () => {
   };
 
   return (
+
+
     <div
       className="min-h-screen flex items-center justify-center px-4"
       style={{
         background:
           "radial-gradient(circle at top, #FFEDD5 0%, #FB923C 35%, #F97316 65%, #9A3412 100%)",
       }}
+
     >
       {/* CARD */}
       <motion.div
