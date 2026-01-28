@@ -92,7 +92,7 @@ const Login = () => {
               Glowlogics
             </h1>
             <p className="mt-4 text-sm text-orange-100 max-w-xs">
-              Glowlogics Management Portal for teams & attendance
+             A modern Glowlogics Management Portal to manage attendance, performance, revenue & teams all in one place.
             </p>
           </div>
         </div>
